@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
   Shield, Settings, Trophy, Flame, ArrowLeft, Save, 
-  IndianRupee, Calendar, Clock, MapPin, Check, AlertCircle, Key 
+  IndianRupee, Calendar, Clock, MapPin, Check, AlertCircle, Key, Database, Cloud, Server 
 } from "lucide-react";
 import { TournamentConfig } from "@/lib/types";
 import { soundManager } from "@/lib/sound";
@@ -18,6 +18,7 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [dbStatus, setDbStatus] = useState<{ provider: string; connected: boolean; message: string } | null>(null);
 
   // Form states
   const [title, setTitle] = useState("");
@@ -44,8 +45,15 @@ export default function AdminSettingsPage() {
 
     async function loadData() {
       try {
-        const res = await fetch("/api/tournament");
-        const data = await res.json();
+        const [tournRes, statusRes] = await Promise.all([
+          fetch("/api/tournament"),
+          fetch("/api/db-status"),
+        ]);
+        const data = await tournRes.json();
+        const statusData = await statusRes.json();
+        if (statusData.success) {
+          setDbStatus(statusData);
+        }
         if (data.success && data.tournament) {
           const t: TournamentConfig = data.tournament;
           setTournament(t);
@@ -154,6 +162,41 @@ export default function AdminSettingsPage() {
               </p>
             </div>
           </div>
+
+          {/* Database Cloud Status Banner */}
+          {dbStatus && (
+            <div className={`mb-6 p-4 rounded-2xl border flex items-center justify-between gap-3 text-xs ${
+              dbStatus.provider === "supabase" && dbStatus.connected
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                : dbStatus.provider === "supabase" && !dbStatus.connected
+                ? "bg-red-500/10 border-red-500/30 text-red-300"
+                : "bg-amber-500/10 border-amber-500/30 text-amber-300"
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                  dbStatus.provider === "supabase" && dbStatus.connected
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : dbStatus.provider === "supabase"
+                    ? "bg-red-500/20 text-red-400"
+                    : "bg-amber-500/20 text-amber-400"
+                }`}>
+                  <Database className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                    {dbStatus.provider === "supabase" ? "Supabase Cloud Database" : "Local File Database"}
+                    {dbStatus.connected && (
+                      <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    )}
+                  </div>
+                  <p className="text-[11px] opacity-80 mt-0.5">{dbStatus.message}</p>
+                </div>
+              </div>
+              <div className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-black/40 border border-white/10 uppercase">
+                {dbStatus.provider === "supabase" ? "PostgreSQL" : "JSON Backup"}
+              </div>
+            </div>
+          )}
 
           {successMsg && (
             <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 text-xs flex items-center gap-2">

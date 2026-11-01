@@ -3,7 +3,7 @@ import { getAllTeams, updateTeamStatus } from "@/lib/storage";
 
 export async function GET() {
   try {
-    const teams = getAllTeams();
+    const teams = await getAllTeams();
     return NextResponse.json({ success: true, teams });
   } catch (error) {
     return NextResponse.json(
@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const updated = updateTeamStatus(id, status, notes);
+    const updated = await updateTeamStatus(id, status, notes);
     if (!updated) {
       return NextResponse.json(
         { success: false, message: "Team not found" },

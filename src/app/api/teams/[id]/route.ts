@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const team = getTeamById(id);
+    const team = await getTeamById(id);
 
     if (!team) {
       return NextResponse.json(
@@ -16,7 +16,7 @@ export async function GET(
       );
     }
 
-    const tournament = getTournament();
+    const tournament = await getTournament();
 
     // Check if room credentials should be visible
     const isRoomVisible = team.status === "approved" && tournament.roomAnnounced;

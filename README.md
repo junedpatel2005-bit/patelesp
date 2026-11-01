@@ -70,6 +70,32 @@ Branded as **patelesp** (Patel Esports), it provides a split architecture with a
 
 ---
 
+## 🗄️ Online Cloud Database Setup (Supabase PostgreSQL)
+
+The platform supports **Supabase (PostgreSQL)** for permanent, serverless cloud storage and live realtime notifications. If no Supabase keys are configured, it automatically falls back to the local JSON database (`data/tournament-db.json`).
+
+### 1. Create a Supabase Project
+1. Sign up / log in to [Supabase](https://supabase.com/).
+2. Click **New Project** and name it `patelesp`.
+
+### 2. Run the SQL Migration
+1. Go to the **SQL Editor** tab in your Supabase Dashboard.
+2. Click **New Query**.
+3. Copy and paste the entire script from [`supabase/schema.sql`](file:///D:/Touarnamnet/supabase/schema.sql).
+4. Click **Run**. This will create the `tournaments`, `teams`, and `admin_notifications` tables with indexes, RLS policies, realtime broadcasting, and default seed data.
+
+### 3. Add Environment Variables
+From your Supabase Project **Settings > API**, copy your credentials into `.env.local` (or Vercel Environment Variables):
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+You can verify connection status anytime at `/api/db-status` or in `/admin/settings`!
+
+---
+
 ## 🌐 Deploying to Vercel (1-Click)
 
 1. Push this project to GitHub.

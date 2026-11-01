@@ -3,7 +3,7 @@ import { getTournament, updateTournament } from "@/lib/storage";
 
 export async function GET() {
   try {
-    const tournament = getTournament();
+    const tournament = await getTournament();
     return NextResponse.json({ success: true, tournament });
   } catch (error) {
     return NextResponse.json(
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const updated = updateTournament(body);
+    const updated = await updateTournament(body);
     return NextResponse.json({ success: true, tournament: updated });
   } catch (error) {
     return NextResponse.json(

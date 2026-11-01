@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const notifications = getNotifications();
+    const notifications = await getNotifications();
     const unreadCount = notifications.filter((n) => !n.read).length;
 
     return NextResponse.json({
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    markNotificationsAsRead();
+    await markNotificationsAsRead();
     return NextResponse.json({ success: true, message: "Notifications marked as read" });
   } catch (error) {
     return NextResponse.json(

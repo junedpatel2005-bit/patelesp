@@ -53,9 +53,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const tournament = getTournament();
+    const tournament = await getTournament();
 
-    const newTeam = createTeam({
+    const newTeam = await createTeam({
       teamName: teamName.trim(),
       captainPhone: captainPhone.trim(),
       captainEmail: captainEmail?.trim() || undefined,
