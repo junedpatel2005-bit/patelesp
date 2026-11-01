@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
   Shield, Settings, Trophy, Flame, ArrowLeft, Save, 
-  IndianRupee, Calendar, Clock, MapPin, Check, AlertCircle, Key, Database, Cloud, Server 
+  IndianRupee, Calendar, Clock, MapPin, Check, AlertCircle, Key, 
+  Database, Users, Phone, Sparkles, Calculator, Swords
 } from "lucide-react";
 import { TournamentConfig } from "@/lib/types";
 import { soundManager } from "@/lib/sound";
@@ -20,17 +21,26 @@ export default function AdminSettingsPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [dbStatus, setDbStatus] = useState<{ provider: string; connected: boolean; message: string } | null>(null);
 
-  // Form states
-  const [title, setTitle] = useState("");
+  // Form states - Pricing & Prizes
   const [entryFee, setEntryFee] = useState<number>(50);
   const [firstPrize, setFirstPrize] = useState<number>(1000);
   const [secondPrize, setSecondPrize] = useState<number>(500);
+  const [perKillPrize, setPerKillPrize] = useState<number>(0);
+
+  // Tournament Info & Schedule
+  const [title, setTitle] = useState("");
+  const [tagline, setTagline] = useState("");
   const [map, setMap] = useState("Bermuda");
   const [matchDate, setMatchDate] = useState("");
   const [matchTime, setMatchTime] = useState("");
   const [maxSlots, setMaxSlots] = useState<number>(48);
+  const [contactNumber, setContactNumber] = useState("");
+
+  // UPI Details
   const [upiId, setUpiId] = useState("");
   const [upiName, setUpiName] = useState("");
+
+  // Custom Room Credentials
   const [roomId, setRoomId] = useState("");
   const [roomPassword, setRoomPassword] = useState("");
   const [roomAnnounced, setRoomAnnounced] = useState(false);
@@ -57,16 +67,19 @@ export default function AdminSettingsPage() {
         if (data.success && data.tournament) {
           const t: TournamentConfig = data.tournament;
           setTournament(t);
-          setTitle(t.title);
-          setEntryFee(t.entryFee);
-          setFirstPrize(t.firstPrize);
-          setSecondPrize(t.secondPrize);
-          setMap(t.map);
-          setMatchDate(t.matchDate);
-          setMatchTime(t.matchTime);
-          setMaxSlots(t.maxSlots);
-          setUpiId(t.upiId);
-          setUpiName(t.upiName);
+          setTitle(t.title || "");
+          setTagline(t.tagline || "");
+          setEntryFee(t.entryFee ?? 50);
+          setFirstPrize(t.firstPrize ?? 1000);
+          setSecondPrize(t.secondPrize ?? 500);
+          setPerKillPrize(t.perKillPrize ?? 0);
+          setMap(t.map || "Bermuda");
+          setMatchDate(t.matchDate || "2026-11-08");
+          setMatchTime(t.matchTime || "08:30 PM IST");
+          setMaxSlots(t.maxSlots ?? 48);
+          setContactNumber(t.contactNumber || "+91 98765 43210");
+          setUpiId(t.upiId || "patelesp@upi");
+          setUpiName(t.upiName || "Patel Esports Arena");
           setRoomId(t.roomId || "");
           setRoomPassword(t.roomPassword || "");
           setRoomAnnounced(t.roomAnnounced || false);
@@ -97,13 +110,16 @@ export default function AdminSettingsPage() {
         },
         body: JSON.stringify({
           title,
+          tagline,
           entryFee: Number(entryFee),
           firstPrize: Number(firstPrize),
           secondPrize: Number(secondPrize),
+          perKillPrize: Number(perKillPrize),
           map,
           matchDate,
           matchTime,
           maxSlots: Number(maxSlots),
+          contactNumber,
           upiId,
           upiName,
           roomId,
@@ -115,7 +131,7 @@ export default function AdminSettingsPage() {
       const data = await res.json();
       if (data.success) {
         soundManager.playSuccessSound();
-        setSuccessMsg("Tournament settings and prizes updated successfully!");
+        setSuccessMsg("Tournament prices, winning rewards, and configuration updated successfully in cloud!");
         setTournament(data.tournament);
       } else {
         setErrorMsg(data.message || "Failed to update settings");
@@ -126,6 +142,11 @@ export default function AdminSettingsPage() {
       setSaving(false);
     }
   };
+
+  // Live Financial Calculations
+  const calculatedPrizePool = Number(firstPrize || 0) + Number(secondPrize || 0);
+  const potentialCollection = Number(entryFee || 0) * Number(maxSlots || 0);
+  const organizerNetMargin = potentialCollection - calculatedPrizePool;
 
   if (loading) {
     return (
@@ -145,7 +166,7 @@ export default function AdminSettingsPage() {
           >
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
-          <div className="text-xs font-bold text-cyber-400">ADMIN CONTROL</div>
+          <div className="text-xs font-bold text-cyber-400">ADMIN COMMAND CENTER</div>
         </div>
 
         <div className="gaming-card-cyber rounded-3xl p-6 sm:p-8 border-cyber-500/30">
@@ -155,10 +176,10 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <h1 className="text-2xl font-black text-white uppercase tracking-tight">
-                Tournament & Prize Pool Settings
+                Tournament Pricing & Configuration
               </h1>
               <p className="text-xs text-gray-400">
-                Update entry fee, 1st & 2nd prize amounts, custom room credentials, and UPI collection ID
+                Configure entry fees per squad, 1st & 2nd winning rewards, match schedule, UPI ID, and room broadcaster
               </p>
             </div>
           </div>
@@ -184,7 +205,7 @@ export default function AdminSettingsPage() {
                 </div>
                 <div>
                   <div className="font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                    {dbStatus.provider === "supabase" ? "Supabase Cloud Database" : "Local File Database"}
+                    {dbStatus.provider === "supabase" ? "Supabase PostgreSQL Database Connected" : "Local File Database"}
                     {dbStatus.connected && (
                       <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     )}
@@ -193,7 +214,7 @@ export default function AdminSettingsPage() {
                 </div>
               </div>
               <div className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-black/40 border border-white/10 uppercase">
-                {dbStatus.provider === "supabase" ? "PostgreSQL" : "JSON Backup"}
+                {dbStatus.provider === "supabase" ? "Live Cloud Sync" : "JSON Backup"}
               </div>
             </div>
           )}
@@ -213,127 +234,200 @@ export default function AdminSettingsPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* PRIZE POOL & ENTRY FEE */}
-            <div className="p-5 rounded-2xl bg-dark-900 border border-dark-800 space-y-4">
-              <h3 className="text-sm font-bold text-fire-400 uppercase tracking-wider flex items-center gap-2">
-                <Trophy className="w-4 h-4" /> Entry Amount & Prize Pool (₹ INR)
-              </h3>
+            {/* 1. SQUAD ENTRY FEE & WINNING PRIZES */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-dark-900 border border-dark-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-fire-400 uppercase tracking-wider flex items-center gap-2">
+                  <Trophy className="w-4 h-4" /> Squad Entry Price & Winning Prize Pool (₹ INR)
+                </h3>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-fire-500/10 text-fire-400 border border-fire-500/20">
+                  Total Prize: ₹{calculatedPrizePool.toLocaleString()}
+                </span>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
-                    Entry Fee (₹)
+                {/* Entry Fee Per Squad */}
+                <div className="p-4 rounded-xl bg-dark-950 border border-dark-750 focus-within:border-fire-500 transition-colors">
+                  <label className="block text-xs font-black uppercase tracking-wider text-fire-400 mb-1">
+                    Entry Fee (₹ Per Squad)
                   </label>
-                  <input
-                    type="number"
-                    required
-                    value={entryFee}
-                    onChange={(e) => setEntryFee(Number(e.target.value))}
-                    className="w-full bg-dark-950 border border-dark-750 focus:border-fire-500 rounded-xl px-4 py-2.5 text-white font-black text-lg focus:outline-none"
-                  />
-                  <p className="text-[11px] text-gray-400 mt-1">Charged per squad</p>
+                  <div className="relative flex items-center mt-2">
+                    <span className="absolute left-3 text-lg font-bold text-gray-500">₹</span>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={entryFee}
+                      onChange={(e) => setEntryFee(Number(e.target.value))}
+                      className="w-full bg-transparent pl-8 pr-3 py-1 text-white font-black text-2xl focus:outline-none"
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-2">Charged for all 4 players combined</p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
-                    1st Prize Winner (₹)
+                {/* 1st Prize Winner */}
+                <div className="p-4 rounded-xl bg-dark-950 border border-dark-750 focus-within:border-gold-500 transition-colors">
+                  <label className="block text-xs font-black uppercase tracking-wider text-gold-400 mb-1">
+                    1st Prize Champion (₹)
                   </label>
-                  <input
-                    type="number"
-                    required
-                    value={firstPrize}
-                    onChange={(e) => setFirstPrize(Number(e.target.value))}
-                    className="w-full bg-dark-950 border border-dark-750 focus:border-gold-500 rounded-xl px-4 py-2.5 text-gold-400 font-black text-lg focus:outline-none"
-                  />
-                  <p className="text-[11px] text-gray-400 mt-1">Champion Cash Reward</p>
+                  <div className="relative flex items-center mt-2">
+                    <span className="absolute left-3 text-lg font-bold text-gray-500">₹</span>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={firstPrize}
+                      onChange={(e) => setFirstPrize(Number(e.target.value))}
+                      className="w-full bg-transparent pl-8 pr-3 py-1 text-gold-400 font-black text-2xl focus:outline-none"
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-2">Booyah #1 Winner Cash Reward</p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
-                    2nd Prize Winner (₹)
+                {/* 2nd Prize Runner-up */}
+                <div className="p-4 rounded-xl bg-dark-950 border border-dark-750 focus-within:border-cyber-500 transition-colors">
+                  <label className="block text-xs font-black uppercase tracking-wider text-cyber-400 mb-1">
+                    2nd Prize Runner-Up (₹)
                   </label>
-                  <input
-                    type="number"
-                    required
-                    value={secondPrize}
-                    onChange={(e) => setSecondPrize(Number(e.target.value))}
-                    className="w-full bg-dark-950 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-cyber-400 font-black text-lg focus:outline-none"
-                  />
-                  <p className="text-[11px] text-gray-400 mt-1">Runner-up Cash Reward</p>
+                  <div className="relative flex items-center mt-2">
+                    <span className="absolute left-3 text-lg font-bold text-gray-500">₹</span>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={secondPrize}
+                      onChange={(e) => setSecondPrize(Number(e.target.value))}
+                      className="w-full bg-transparent pl-8 pr-3 py-1 text-cyber-400 font-black text-2xl focus:outline-none"
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-2">2nd Place Squad Cash Reward</p>
+                </div>
+              </div>
+
+              {/* Live Financial Projection Card */}
+              <div className="p-3.5 rounded-xl bg-dark-950/70 border border-dark-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Calculator className="w-4 h-4 text-cyber-400" />
+                  <span>Live Financial Summary ({maxSlots} Squads):</span>
+                </div>
+                <div className="flex items-center gap-4 text-[11px]">
+                  <span>Total Entry Collection: <strong className="text-white">₹{potentialCollection.toLocaleString()}</strong></span>
+                  <span>Prize Payout: <strong className="text-fire-400">₹{calculatedPrizePool.toLocaleString()}</strong></span>
+                  <span>Host Profit Margin: <strong className={organizerNetMargin >= 0 ? "text-emerald-400" : "text-red-400"}>
+                    {organizerNetMargin >= 0 ? `+₹${organizerNetMargin.toLocaleString()}` : `-₹${Math.abs(organizerNetMargin).toLocaleString()}`}
+                  </strong></span>
                 </div>
               </div>
             </div>
 
-            {/* TOURNAMENT TITLE & SLOTS */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
-                  Tournament Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-dark-900 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
-                  Max Squad Slots
-                </label>
-                <input
-                  type="number"
-                  required
-                  value={maxSlots}
-                  onChange={(e) => setMaxSlots(Number(e.target.value))}
-                  className="w-full bg-dark-900 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
-                  Match Map
-                </label>
-                <select
-                  value={map}
-                  onChange={(e) => setMap(e.target.value)}
-                  className="w-full bg-dark-900 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
-                >
-                  <option value="Bermuda">Bermuda</option>
-                  <option value="Purgatory">Purgatory</option>
-                  <option value="Kalahari">Kalahari</option>
-                  <option value="Alpine">Alpine</option>
-                  <option value="NexTerra">NexTerra</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
-                  Match Time
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 08:30 PM IST"
-                  value={matchTime}
-                  onChange={(e) => setMatchTime(e.target.value)}
-                  className="w-full bg-dark-900 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
-                />
-              </div>
-            </div>
-
-            {/* UPI PAYMENT COLLECTION SETTINGS */}
+            {/* 2. TOURNAMENT INFO & SCHEDULE */}
             <div className="p-5 rounded-2xl bg-dark-900 border border-dark-800 space-y-4">
               <h3 className="text-sm font-bold text-cyber-400 uppercase tracking-wider flex items-center gap-2">
-                <IndianRupee className="w-4 h-4" /> UPI Payment Collection Details
+                <Swords className="w-4 h-4" /> Tournament Branding & Match Schedule
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
-                    UPI ID (VPA)
+                    Tournament Title
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. PATELESP FREE FIRE SQUAD SHOWDOWN"
+                    className="w-full bg-dark-950 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
+                    Tagline / Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    value={tagline}
+                    onChange={(e) => setTagline(e.target.value)}
+                    placeholder="e.g. India's Ultimate Free Fire Battle Royale Arena"
+                    className="w-full bg-dark-950 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
+                    Match Date
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      required
+                      value={matchDate}
+                      onChange={(e) => setMatchDate(e.target.value)}
+                      className="w-full bg-dark-950 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
+                    Match Time
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 08:30 PM IST"
+                    value={matchTime}
+                    onChange={(e) => setMatchTime(e.target.value)}
+                    className="w-full bg-dark-950 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
+                    Battle Royale Map
+                  </label>
+                  <select
+                    value={map}
+                    onChange={(e) => setMap(e.target.value)}
+                    className="w-full bg-dark-950 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
+                  >
+                    <option value="Bermuda">Bermuda (Standard)</option>
+                    <option value="Purgatory">Purgatory</option>
+                    <option value="Kalahari">Kalahari (Desert)</option>
+                    <option value="Alpine">Alpine (Snow/Forest)</option>
+                    <option value="NexTerra">NexTerra (Sci-Fi)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
+                    Max Allowed Squad Slots
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={2}
+                    max={100}
+                    value={maxSlots}
+                    onChange={(e) => setMaxSlots(Number(e.target.value))}
+                    className="w-full bg-dark-950 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">Default 48 slots for full custom lobby</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. UPI PAYMENT COLLECTION & SUPPORT HELPLINE */}
+            <div className="p-5 rounded-2xl bg-dark-900 border border-dark-800 space-y-4">
+              <h3 className="text-sm font-bold text-cyber-400 uppercase tracking-wider flex items-center gap-2">
+                <IndianRupee className="w-4 h-4" /> UPI Payment Collection & Support Contact
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
+                    Host UPI ID (VPA)
                   </label>
                   <input
                     type="text"
@@ -343,7 +437,7 @@ export default function AdminSettingsPage() {
                     onChange={(e) => setUpiId(e.target.value)}
                     className="w-full bg-dark-950 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white font-mono text-sm focus:outline-none"
                   />
-                  <p className="text-[11px] text-gray-400 mt-1">Teams pay entry fee to this UPI</p>
+                  <p className="text-[11px] text-gray-400 mt-1">Generates dynamic QR for entry fee</p>
                 </div>
 
                 <div>
@@ -353,36 +447,51 @@ export default function AdminSettingsPage() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Patel Esports"
+                    placeholder="e.g. Patel Esports Arena"
                     value={upiName}
                     onChange={(e) => setUpiName(e.target.value)}
                     className="w-full bg-dark-950 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
                   />
+                  <p className="text-[11px] text-gray-400 mt-1">Appears on UPI apps (GPay, PhonePe)</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
+                    Organizer WhatsApp / Helpline
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. +91 98765 43210"
+                    value={contactNumber}
+                    onChange={(e) => setContactNumber(e.target.value)}
+                    className="w-full bg-dark-950 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">Displayed on ticket for player queries</p>
                 </div>
               </div>
             </div>
 
-            {/* CUSTOM ROOM BROADCAST */}
+            {/* 4. CUSTOM ROOM BROADCASTER */}
             <div className="p-5 rounded-2xl bg-dark-900 border border-dark-800 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <h3 className="text-sm font-bold text-fire-400 uppercase tracking-wider flex items-center gap-2">
                   <Key className="w-4 h-4" /> Free Fire Custom Room Credentials
                 </h3>
-                <label className="flex items-center gap-2 text-xs font-bold text-gray-300 cursor-pointer">
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-300 cursor-pointer bg-dark-950 px-3 py-1.5 rounded-lg border border-dark-750">
                   <input
                     type="checkbox"
                     checked={roomAnnounced}
                     onChange={(e) => setRoomAnnounced(e.target.checked)}
                     className="w-4 h-4 rounded text-fire-500 bg-dark-950 border-dark-750"
                   />
-                  Broadcast to Verified Teams
+                  <span>Broadcast to Verified Teams</span>
                 </label>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
-                    Room ID
+                    Custom Room ID
                   </label>
                   <input
                     type="text"
@@ -391,11 +500,12 @@ export default function AdminSettingsPage() {
                     onChange={(e) => setRoomId(e.target.value)}
                     className="w-full bg-dark-950 border border-dark-750 focus:border-fire-500 rounded-xl px-4 py-2.5 text-white font-mono text-sm focus:outline-none"
                   />
+                  <p className="text-[11px] text-gray-400 mt-1">Only revealed when Broadcast is enabled</p>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-gray-300 mb-1.5">
-                    Room Password
+                    Custom Room Password
                   </label>
                   <input
                     type="text"
@@ -404,6 +514,7 @@ export default function AdminSettingsPage() {
                     onChange={(e) => setRoomPassword(e.target.value)}
                     className="w-full bg-dark-950 border border-dark-750 focus:border-fire-500 rounded-xl px-4 py-2.5 text-white font-mono text-sm focus:outline-none"
                   />
+                  <p className="text-[11px] text-gray-400 mt-1">Kept confidential until match broadcast</p>
                 </div>
               </div>
             </div>
@@ -418,7 +529,7 @@ export default function AdminSettingsPage() {
                 {saving ? (
                   <>
                     <span className="w-4 h-4 border-2 border-dark-950 border-t-transparent rounded-full animate-spin" />
-                    Saving Changes...
+                    Saving to Cloud...
                   </>
                 ) : (
                   <>
