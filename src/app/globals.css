@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #07090e;
+  --foreground: #f3f4f6;
+}
+
+body {
+  color: var(--foreground);
+  background-color: var(--background);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Esports Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0e17;
+}
+::-webkit-scrollbar-thumb {
+  background: #232e45;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ff5500;
+}
+
+/* Glassmorphism Card Style */
+.gaming-card {
+  background: rgba(14, 20, 32, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 85, 0, 0.15);
+  transition: all 0.25s ease-in-out;
+}
+
+.gaming-card:hover {
+  border-color: rgba(255, 85, 0, 0.4);
+  box-shadow: 0 8px 30px rgba(255, 85, 0, 0.12);
+}
+
+.gaming-card-cyber {
+  background: rgba(11, 16, 26, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 240, 255, 0.18);
+  transition: all 0.25s ease-in-out;
+}
+
+.gaming-card-cyber:hover {
+  border-color: rgba(0, 240, 255, 0.5);
+  box-shadow: 0 8px 30px rgba(0, 240, 255, 0.15);
+}
+
+/* Esports Hex Grid Pattern */
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(255, 85, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 85, 0, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.bg-dots-pattern {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Neon Text Glow */
+.text-glow-fire {
+  text-shadow: 0 0 15px rgba(255, 85, 0, 0.6);
+}
+
+.text-glow-gold {
+  text-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+}
+
+.text-glow-cyber {
+  text-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+}
+
+/* Pulsing Badge Indicator */
+@keyframes ring-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 0.3; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.live-indicator {
+  animation: ring-pulse 2s infinite ease-in-out;
+}
