@@ -49,12 +49,10 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm text-gray-400">
               <li className="flex items-center gap-2">
                 <PhoneCall className="w-4 h-4 text-fire-400" />
-                <span>WhatsApp Helpline: Available</span>
+                <span>WhatsApp Helpline Available</span>
               </li>
-              <li>
-                <Link href="/admin" className="text-xs text-gray-400 hover:text-white underline">
-                  Admin Login Portal
-                </Link>
+              <li className="text-xs text-gray-400">
+                Contact host for tournament slots & queries
               </li>
             </ul>
           </div>
