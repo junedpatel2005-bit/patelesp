@@ -280,7 +280,9 @@ export async function getTournament(): Promise<TournamentConfig> {
           .maybeSingle();
 
         if (!error && data) {
-          return mapTournamentFromRow(data);
+          const mapped = mapTournamentFromRow(data);
+          memoryDb.tournament = mapped;
+          return mapped;
         }
         if (error) {
           console.error("Supabase getTournament query error, falling back to local:", error.message);
@@ -302,28 +304,63 @@ export async function updateTournament(updates: Partial<TournamentConfig>): Prom
       if (client) {
         // Fetch current to calculate prize totals correctly
         const current = await getTournament();
-        const firstPrize = updates.firstPrize ?? current.firstPrize;
-        const secondPrize = updates.secondPrize ?? current.secondPrize;
+        const firstPrize = updates.firstPrize !== undefined ? Number(updates.firstPrize) : current.firstPrize;
+        const secondPrize = updates.secondPrize !== undefined ? Number(updates.secondPrize) : current.secondPrize;
+        const entryFee = updates.entryFee !== undefined ? Number(updates.entryFee) : current.entryFee;
         const totalPrizePool = firstPrize + secondPrize;
 
         const merged: TournamentConfig = {
           ...current,
           ...updates,
+          entryFee,
           firstPrize,
           secondPrize,
           totalPrizePool,
         };
 
+        const targetId = current.id || "patel-ff-season-1";
+        merged.id = targetId;
         const row = mapTournamentToRow(merged);
+        row.id = targetId;
+
+        // Try updating the existing row in Supabase
         const { data, error } = await client
           .from("tournaments")
-          .upsert(row)
+          .update(row)
+          .eq("id", targetId)
           .select()
-          .single();
+          .maybeSingle();
 
         if (!error && data) {
-          return mapTournamentFromRow(data);
+          const mapped = mapTournamentFromRow(data);
+          // Also keep local file in sync
+          const db = loadLocalData();
+          db.tournament = mapped;
+          saveLocalData(db);
+          return mapped;
         }
+
+        // If no row exists yet, insert full row
+        if (!data) {
+          const fullRow = mapTournamentToRow({ ...defaultTournament, ...merged });
+          const { data: insertData, error: insertError } = await client
+            .from("tournaments")
+            .insert(fullRow)
+            .select()
+            .single();
+
+          if (!insertError && insertData) {
+            const mapped = mapTournamentFromRow(insertData);
+            const db = loadLocalData();
+            db.tournament = mapped;
+            saveLocalData(db);
+            return mapped;
+          }
+          if (insertError) {
+            console.error("Supabase insertTournament error:", insertError.message);
+          }
+        }
+
         if (error) {
           console.error("Supabase updateTournament error, falling back to local:", error.message);
         }
@@ -334,10 +371,16 @@ export async function updateTournament(updates: Partial<TournamentConfig>): Prom
   }
 
   const db = loadLocalData();
+  const firstPrize = updates.firstPrize !== undefined ? Number(updates.firstPrize) : db.tournament.firstPrize;
+  const secondPrize = updates.secondPrize !== undefined ? Number(updates.secondPrize) : db.tournament.secondPrize;
+  const entryFee = updates.entryFee !== undefined ? Number(updates.entryFee) : db.tournament.entryFee;
   db.tournament = {
     ...db.tournament,
     ...updates,
-    totalPrizePool: (updates.firstPrize ?? db.tournament.firstPrize) + (updates.secondPrize ?? db.tournament.secondPrize),
+    entryFee,
+    firstPrize,
+    secondPrize,
+    totalPrizePool: firstPrize + secondPrize,
   };
   saveLocalData(db);
   return db.tournament;

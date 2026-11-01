@@ -48,10 +48,16 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center max-w-3xl mx-auto space-y-6">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-fire-500/10 border border-fire-500/30 text-fire-400 text-xs sm:text-sm font-bold tracking-wide shadow-glow-fire/40 animate-pulse-slow">
-            <span className="w-2 h-2 rounded-full bg-fire-500 live-indicator" />
-            REGISTRATION LIVE • 4-PLAYER SQUAD
+          {/* Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-fire-500/10 border border-fire-500/30 text-fire-400 text-xs sm:text-sm font-bold tracking-wide shadow-glow-fire/40 animate-pulse-slow">
+              <span className="w-2 h-2 rounded-full bg-fire-500 live-indicator" />
+              REGISTRATION LIVE • 4-PLAYER SQUAD
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-dark-900 border border-dark-750 text-gray-300 text-xs font-semibold">
+              <span>Created by</span>
+              <strong className="text-fire-400">Juned Patel</strong>
+            </div>
           </div>
 
           {/* Title */}

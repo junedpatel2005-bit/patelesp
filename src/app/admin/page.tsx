@@ -39,6 +39,29 @@ export default function AdminDashboardPage() {
   const [roomAnnounced, setRoomAnnounced] = useState(false);
   const [roomUpdating, setRoomUpdating] = useState(false);
 
+  // Quick Price & Tournament Settings Update
+  const [quickEntryFee, setQuickEntryFee] = useState<string>("50");
+  const [quickFirstPrize, setQuickFirstPrize] = useState<string>("1000");
+  const [quickSecondPrize, setQuickSecondPrize] = useState<string>("500");
+  const [quickMaxSlots, setQuickMaxSlots] = useState<string>("48");
+  const [priceSaving, setPriceSaving] = useState(false);
+  const [priceSuccessMsg, setPriceSuccessMsg] = useState("");
+  const [priceErrorMsg, setPriceErrorMsg] = useState("");
+
+  const handlePriceNumericInput = (val: string, setter: (v: string) => void) => {
+    if (val === "") {
+      setter("");
+      return;
+    }
+    const digitsOnly = val.replace(/\D/g, "");
+    if (digitsOnly === "") {
+      setter("");
+      return;
+    }
+    const cleaned = digitsOnly.replace(/^0+(?=\d)/, "");
+    setter(cleaned);
+  };
+
   // Copied states
   const [copiedUids, setCopiedUids] = useState<string | null>(null);
 
@@ -67,11 +90,16 @@ export default function AdminDashboardPage() {
       const teamsData = await teamsRes.json();
       const notifData = await notifRes.json();
 
-      if (tournData.success) {
-        setTournament(tournData.tournament);
-        setRoomIdInput(tournData.tournament.roomId || "");
-        setRoomPassInput(tournData.tournament.roomPassword || "");
-        setRoomAnnounced(tournData.tournament.roomAnnounced || false);
+      if (tournData.success && tournData.tournament) {
+        const t = tournData.tournament;
+        setTournament(t);
+        setRoomIdInput(t.roomId || "");
+        setRoomPassInput(t.roomPassword || "");
+        setRoomAnnounced(t.roomAnnounced || false);
+        setQuickEntryFee(String(t.entryFee ?? 50));
+        setQuickFirstPrize(String(t.firstPrize ?? 1000));
+        setQuickSecondPrize(String(t.secondPrize ?? 500));
+        setQuickMaxSlots(String(t.maxSlots ?? 48));
       }
 
       if (teamsData.success) {
@@ -106,6 +134,7 @@ export default function AdminDashboardPage() {
     }, 8000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adminKey, soundEnabled]);
 
   const handleStatusChange = async (teamId: string, status: "approved" | "rejected") => {
@@ -168,6 +197,44 @@ export default function AdminDashboardPage() {
       alert("Failed to update room credentials");
     } finally {
       setRoomUpdating(false);
+    }
+  };
+
+  const handleSavePrices = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminKey) return;
+    setPriceSaving(true);
+    setPriceSuccessMsg("");
+    setPriceErrorMsg("");
+
+    try {
+      const res = await fetch("/api/tournament", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-key": adminKey,
+        },
+        body: JSON.stringify({
+          entryFee: Number(quickEntryFee) || 0,
+          firstPrize: Number(quickFirstPrize) || 0,
+          secondPrize: Number(quickSecondPrize) || 0,
+          maxSlots: Number(quickMaxSlots) || 48,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setTournament(data.tournament);
+        soundManager.playSuccessSound();
+        setPriceSuccessMsg("Price & Prize Pool updated successfully across entire website!");
+        setTimeout(() => setPriceSuccessMsg(""), 5000);
+      } else {
+        setPriceErrorMsg(data.message || "Failed to update pricing");
+      }
+    } catch (err) {
+      setPriceErrorMsg("Error saving tournament prices to database");
+    } finally {
+      setPriceSaving(false);
     }
   };
 
@@ -256,11 +323,14 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-black text-white text-lg tracking-wider">PATEL<span className="text-cyber-400">ESP</span></span>
+                <span className="font-black text-white text-base sm:text-lg tracking-wider">PATEL<span className="text-cyber-400">ESP</span></span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyber-500/10 text-cyber-400 border border-cyber-500/30 uppercase">
                   ADMIN CONSOLE
                 </span>
               </div>
+              <p className="text-[10px] text-gray-400 hidden sm:block">
+                Created by <strong className="text-cyber-400 font-semibold">Juned Patel</strong>
+              </p>
             </div>
           </div>
 
@@ -406,12 +476,144 @@ export default function AdminDashboardPage() {
               <IndianRupee className="w-5 h-5 text-fire-400" />
             </div>
             <div className="text-3xl font-black text-white">₹{totalRevenue.toLocaleString()}</div>
-            <p className="text-[11px] text-gray-400 mt-1">Entry Fee Pool (₹50 / team)</p>
+            <p className="text-[11px] text-gray-400 mt-1">Entry Fee Pool (₹{tournament?.entryFee ?? 50} / team)</p>
           </div>
         </div>
 
+        {/* QUICK TOURNAMENT PRICE & SETTINGS (INSTANT WEBSITE CONTROL) */}
+        <div className="gaming-card-cyber rounded-2xl p-5 sm:p-6 border-cyber-500/30 bg-dark-900/80">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-dark-800">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-cyber-500/20 text-cyber-400 flex items-center justify-center border border-cyber-500/30">
+                <Trophy className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white uppercase tracking-tight">
+                  Quick Tournament Pricing & Rewards
+                </h3>
+                <p className="text-xs text-gray-400">
+                  Update squad entry fee and prize pool here — changes apply instantly across the whole website!
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/admin/settings"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-cyber-400 hover:text-white px-3 py-1.5 rounded-lg bg-cyber-500/10 border border-cyber-500/30 transition-colors w-fit"
+            >
+              <Settings className="w-3.5 h-3.5" /> Full Settings
+            </Link>
+          </div>
+
+          {priceSuccessMsg && (
+            <div className="mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 text-xs flex items-center gap-2">
+              <Check className="w-4 h-4 flex-shrink-0" />
+              <span>{priceSuccessMsg}</span>
+            </div>
+          )}
+
+          {priceErrorMsg && (
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{priceErrorMsg}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSavePrices} className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              {/* Entry Fee */}
+              <div className="p-3 sm:p-3.5 rounded-xl bg-dark-950 border border-dark-750 focus-within:border-fire-500 transition-colors">
+                <label className="block text-[11px] font-black uppercase text-fire-400 mb-1">
+                  Entry Fee (₹ Squad)
+                </label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-2.5 text-sm font-bold text-gray-500">₹</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="50"
+                    value={quickEntryFee}
+                    onChange={(e) => handlePriceNumericInput(e.target.value, setQuickEntryFee)}
+                    className="w-full bg-transparent pl-6 pr-2 py-1 text-white font-black text-lg focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* 1st Prize */}
+              <div className="p-3 sm:p-3.5 rounded-xl bg-dark-950 border border-dark-750 focus-within:border-gold-500 transition-colors">
+                <label className="block text-[11px] font-black uppercase text-gold-400 mb-1">
+                  1st Prize (₹ Champion)
+                </label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-2.5 text-sm font-bold text-gray-500">₹</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="1000"
+                    value={quickFirstPrize}
+                    onChange={(e) => handlePriceNumericInput(e.target.value, setQuickFirstPrize)}
+                    className="w-full bg-transparent pl-6 pr-2 py-1 text-gold-400 font-black text-lg focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* 2nd Prize */}
+              <div className="p-3 sm:p-3.5 rounded-xl bg-dark-950 border border-dark-750 focus-within:border-cyber-500 transition-colors">
+                <label className="block text-[11px] font-black uppercase text-cyber-400 mb-1">
+                  2nd Prize (₹ Runner-Up)
+                </label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-2.5 text-sm font-bold text-gray-500">₹</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="500"
+                    value={quickSecondPrize}
+                    onChange={(e) => handlePriceNumericInput(e.target.value, setQuickSecondPrize)}
+                    className="w-full bg-transparent pl-6 pr-2 py-1 text-cyber-400 font-black text-lg focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Max Slots */}
+              <div className="p-3 sm:p-3.5 rounded-xl bg-dark-950 border border-dark-750 focus-within:border-cyber-500 transition-colors">
+                <label className="block text-[11px] font-black uppercase text-gray-300 mb-1">
+                  Max Slots
+                </label>
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="48"
+                    value={quickMaxSlots}
+                    onChange={(e) => handlePriceNumericInput(e.target.value, setQuickMaxSlots)}
+                    className="w-full bg-transparent px-2 py-1 text-white font-black text-lg focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+              <div className="text-xs text-gray-400">
+                Total Prize Pool: <strong className="text-white">₹{((Number(quickFirstPrize) || 0) + (Number(quickSecondPrize) || 0)).toLocaleString()}</strong>
+              </div>
+              <button
+                type="submit"
+                disabled={priceSaving}
+                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-cyber-gradient text-dark-950 text-xs font-black uppercase tracking-wider shadow-glow-cyber hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+              >
+                {priceSaving ? "Saving..." : "Save & Update Website Price"}
+              </button>
+            </div>
+          </form>
+        </div>
+
         {/* CUSTOM ROOM ID & PASSWORD BROADCASTER */}
-        <div className="gaming-card rounded-2xl p-6 border-fire-500/30 bg-dark-900/60">
+        <div className="gaming-card rounded-2xl p-5 sm:p-6 border-fire-500/30 bg-dark-900/60">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-fire-500/20 text-fire-400 flex items-center justify-center">
@@ -473,27 +675,27 @@ export default function AdminDashboardPage() {
           </form>
         </div>
 
-        {/* TEAM REGISTRATIONS TABLE */}
-        <div className="gaming-card rounded-2xl p-6 border-dark-750 space-y-6">
+        {/* REGISTERED PLAYERS TABLE (CLEAN & MOBILE FRIENDLY) */}
+        <div className="gaming-card rounded-2xl p-4 sm:p-6 border-dark-750 space-y-5">
           {/* Controls Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-fire-400" />
-                Team Registrations ({filteredTeams.length})
+                Registered Players ({filteredTeams.length})
               </h3>
-              <p className="text-xs text-gray-400">Review 4-player rosters and payment verification</p>
+              <p className="text-xs text-gray-400">Squad players registered for the tournament</p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {/* Search input */}
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-initial">
                 <input
                   type="text"
-                  placeholder="Search team, phone, UTR..."
+                  placeholder="Search team or player..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-dark-950 border border-dark-750 rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-fire-500 w-48 sm:w-64"
+                  className="bg-dark-950 border border-dark-750 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-fire-500 w-full sm:w-56"
                 />
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
@@ -504,8 +706,8 @@ export default function AdminDashboardPage() {
                 onChange={(e) => setStatusFilter(e.target.value as "all" | "pending" | "approved" | "rejected")}
                 className="bg-dark-950 border border-dark-750 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
               >
-                <option value="all">All Status</option>
-                <option value="pending">Pending Review</option>
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
               </select>
@@ -517,20 +719,101 @@ export default function AdminDashboardPage() {
                 title="Download CSV for Match Referee"
               >
                 <Download className="w-4 h-4" />
-                Export CSV
+                <span className="hidden sm:inline">Export</span>
               </button>
             </div>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
+          {/* Mobile View: Clean Registered Player Cards (No Clutter, 100% Mobile Friendly) */}
+          <div className="block sm:hidden space-y-3">
+            {filteredTeams.length === 0 ? (
+              <div className="py-8 text-center text-gray-400 text-xs">
+                No squad registrations match your search filters.
+              </div>
+            ) : (
+              filteredTeams.map((team, idx) => (
+                <div key={team.id} className="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-dark-800 text-gray-400 border border-dark-700">
+                          #{idx + 1}
+                        </span>
+                        <span className="font-bold text-white text-sm">{team.teamName}</span>
+                      </div>
+                      <span className="text-[11px] font-mono text-fire-400">{team.id}</span>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                        team.status === "approved"
+                          ? "bg-green-500/10 text-green-400 border border-green-500/30"
+                          : team.status === "rejected"
+                          ? "bg-red-500/10 text-red-400 border border-red-500/30"
+                          : "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                      }`}
+                    >
+                      {team.status}
+                    </span>
+                  </div>
+
+                  {/* Registered Players Names */}
+                  <div className="p-2.5 rounded-lg bg-dark-950 border border-dark-850">
+                    <p className="text-[10px] font-bold uppercase text-gray-400 mb-1">Registered Players:</p>
+                    <p className="text-xs text-gray-200 font-medium leading-relaxed">
+                      {team.players.map((p) => p.name).filter(Boolean).join(" • ") || "Players Registered"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <a
+                      href={`https://wa.me/91${team.captainPhone}?text=Hello%20${encodeURIComponent(team.teamName)},%20this%20is%20PATELESP%20Tournament%20Admin.`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-green-400 hover:underline font-mono"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" /> {team.captainPhone}
+                    </a>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setSelectedTeam(team)}
+                        className="px-2 py-1 rounded-lg bg-dark-800 text-gray-300 text-xs font-semibold"
+                      >
+                        Inspect
+                      </button>
+                      {team.status !== "approved" && (
+                        <button
+                          onClick={() => handleStatusChange(team.id, "approved")}
+                          disabled={actionLoading}
+                          className="px-2.5 py-1 rounded-lg bg-green-600/20 text-green-400 border border-green-500/30 text-xs font-bold"
+                        >
+                          Approve
+                        </button>
+                      )}
+                      {team.status !== "rejected" && (
+                        <button
+                          onClick={() => handleStatusChange(team.id, "rejected")}
+                          disabled={actionLoading}
+                          className="px-2.5 py-1 rounded-lg bg-red-600/20 text-red-400 border border-red-500/30 text-xs font-bold"
+                        >
+                          Reject
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop View: Streamlined Registered Players Table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-dark-900/90 text-gray-400 uppercase font-bold tracking-wider border-b border-dark-800">
                 <tr>
-                  <th className="py-3 px-4">Ticket ID & Team</th>
+                  <th className="py-3 px-3 w-10">#</th>
+                  <th className="py-3 px-4">Squad & Registered Players</th>
                   <th className="py-3 px-4">Captain WhatsApp</th>
-                  <th className="py-3 px-4">4 Players Roster</th>
-                  <th className="py-3 px-4">UTR Reference</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
@@ -538,17 +821,26 @@ export default function AdminDashboardPage() {
               <tbody className="divide-y divide-dark-850">
                 {filteredTeams.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-400">
+                    <td colSpan={5} className="py-8 text-center text-gray-400">
                       No registrations match your search filters.
                     </td>
                   </tr>
                 ) : (
-                  filteredTeams.map((team) => (
+                  filteredTeams.map((team, idx) => (
                     <tr key={team.id} className="hover:bg-dark-900/50 transition-colors">
-                      {/* Ticket ID & Team */}
+                      {/* # Index */}
+                      <td className="py-4 px-3 font-mono text-gray-500 font-bold">
+                        #{idx + 1}
+                      </td>
+
+                      {/* Squad & Registered Players */}
                       <td className="py-4 px-4">
                         <div className="font-bold text-white text-sm">{team.teamName}</div>
-                        <div className="text-[11px] font-mono text-fire-400">{team.id}</div>
+                        <div className="text-gray-300 text-xs mt-1">
+                          <span className="text-gray-400 text-[11px] font-semibold mr-1.5">Players:</span>
+                          {team.players.map((p) => p.name).filter(Boolean).join(" • ")}
+                        </div>
+                        <div className="text-[10px] font-mono text-fire-400 mt-0.5">{team.id}</div>
                       </td>
 
                       {/* Captain WhatsApp */}
@@ -562,30 +854,6 @@ export default function AdminDashboardPage() {
                         >
                           <MessageSquare className="w-3 h-3" /> WhatsApp
                         </a>
-                      </td>
-
-                      {/* 4 Players Summary */}
-                      <td className="py-4 px-4">
-                        <div className="space-y-0.5">
-                          <p className="text-gray-200 font-semibold truncate max-w-[200px]">
-                            {team.players.map((p) => p.name).join(", ")}
-                          </p>
-                          <button
-                            onClick={() => copyTeamUids(team)}
-                            className="text-[10px] text-cyber-400 hover:underline flex items-center gap-1 font-mono cursor-pointer"
-                          >
-                            {copiedUids === team.id ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
-                            {copiedUids === team.id ? "UIDs Copied!" : "Copy 4 FF UIDs"}
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* UTR */}
-                      <td className="py-4 px-4">
-                        <span className="font-mono text-xs font-semibold text-gray-300 bg-dark-950 px-2 py-1 rounded border border-dark-800">
-                          {team.utrNumber}
-                        </span>
-                        <div className="text-[10px] text-gray-400 mt-0.5">₹{team.entryFeePaid}</div>
                       </td>
 
                       {/* Status */}
@@ -611,9 +879,9 @@ export default function AdminDashboardPage() {
                         <button
                           onClick={() => setSelectedTeam(team)}
                           className="px-2.5 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-750 text-gray-200 text-xs font-semibold inline-flex items-center gap-1 transition-colors"
-                          title="View Full 4-Player Roster"
+                          title="Inspect Details"
                         >
-                          <Eye className="w-3.5 h-3.5" /> View
+                          <Eye className="w-3.5 h-3.5" /> Details
                         </button>
 
                         {team.status !== "approved" && (
@@ -642,6 +910,11 @@ export default function AdminDashboardPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Admin Footer Attribution */}
+        <div className="pt-4 pb-8 text-center text-xs text-gray-400">
+          PATELESP Tournament Management Console • Created by <strong className="text-white">Juned Patel</strong>
         </div>
       </main>
 

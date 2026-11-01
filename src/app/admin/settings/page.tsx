@@ -21,11 +21,28 @@ export default function AdminSettingsPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [dbStatus, setDbStatus] = useState<{ provider: string; connected: boolean; message: string } | null>(null);
 
-  // Form states - Pricing & Prizes
-  const [entryFee, setEntryFee] = useState<number>(50);
-  const [firstPrize, setFirstPrize] = useState<number>(1000);
-  const [secondPrize, setSecondPrize] = useState<number>(500);
-  const [perKillPrize, setPerKillPrize] = useState<number>(0);
+  // Form states - Pricing & Prizes (stored as string to prevent 040 erasing bug)
+  const [entryFee, setEntryFee] = useState<string>("50");
+  const [firstPrize, setFirstPrize] = useState<string>("1000");
+  const [secondPrize, setSecondPrize] = useState<string>("500");
+  const [perKillPrize, setPerKillPrize] = useState<string>("0");
+
+  // Helper to cleanly handle number inputs, allowing empty inputs and removing leading zeros
+  const handleNumericInput = (val: string, setter: (v: string) => void) => {
+    if (val === "") {
+      setter("");
+      return;
+    }
+    // Remove non-numeric characters except digits
+    const digitsOnly = val.replace(/\D/g, "");
+    if (digitsOnly === "") {
+      setter("");
+      return;
+    }
+    // Remove leading zeros like "040" -> "40"
+    const cleaned = digitsOnly.replace(/^0+(?=\d)/, "");
+    setter(cleaned);
+  };
 
   // Tournament Info & Schedule
   const [title, setTitle] = useState("");
@@ -33,7 +50,7 @@ export default function AdminSettingsPage() {
   const [map, setMap] = useState("Bermuda");
   const [matchDate, setMatchDate] = useState("");
   const [matchTime, setMatchTime] = useState("");
-  const [maxSlots, setMaxSlots] = useState<number>(48);
+  const [maxSlots, setMaxSlots] = useState<string>("48");
   const [contactNumber, setContactNumber] = useState("");
 
   // UPI Details
@@ -69,14 +86,14 @@ export default function AdminSettingsPage() {
           setTournament(t);
           setTitle(t.title || "");
           setTagline(t.tagline || "");
-          setEntryFee(t.entryFee ?? 50);
-          setFirstPrize(t.firstPrize ?? 1000);
-          setSecondPrize(t.secondPrize ?? 500);
-          setPerKillPrize(t.perKillPrize ?? 0);
+          setEntryFee(String(t.entryFee ?? 50));
+          setFirstPrize(String(t.firstPrize ?? 1000));
+          setSecondPrize(String(t.secondPrize ?? 500));
+          setPerKillPrize(String(t.perKillPrize ?? 0));
           setMap(t.map || "Bermuda");
           setMatchDate(t.matchDate || "2026-11-08");
           setMatchTime(t.matchTime || "08:30 PM IST");
-          setMaxSlots(t.maxSlots ?? 48);
+          setMaxSlots(String(t.maxSlots ?? 48));
           setContactNumber(t.contactNumber || "+91 98765 43210");
           setUpiId(t.upiId || "patelesp@upi");
           setUpiName(t.upiName || "Patel Esports Arena");
@@ -166,7 +183,11 @@ export default function AdminSettingsPage() {
           >
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
-          <div className="text-xs font-bold text-cyber-400">ADMIN COMMAND CENTER</div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-gray-400">Created by <strong className="text-cyber-400">Juned Patel</strong></span>
+            <span className="text-gray-600">|</span>
+            <div className="text-xs font-bold text-cyber-400">ADMIN COMMAND CENTER</div>
+          </div>
         </div>
 
         <div className="gaming-card-cyber rounded-3xl p-6 sm:p-8 border-cyber-500/30">
@@ -254,11 +275,12 @@ export default function AdminSettingsPage() {
                   <div className="relative flex items-center mt-2">
                     <span className="absolute left-3 text-lg font-bold text-gray-500">₹</span>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       required
-                      min={0}
+                      placeholder="0"
                       value={entryFee}
-                      onChange={(e) => setEntryFee(Number(e.target.value))}
+                      onChange={(e) => handleNumericInput(e.target.value, setEntryFee)}
                       className="w-full bg-transparent pl-8 pr-3 py-1 text-white font-black text-2xl focus:outline-none"
                     />
                   </div>
@@ -273,11 +295,12 @@ export default function AdminSettingsPage() {
                   <div className="relative flex items-center mt-2">
                     <span className="absolute left-3 text-lg font-bold text-gray-500">₹</span>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       required
-                      min={0}
+                      placeholder="0"
                       value={firstPrize}
-                      onChange={(e) => setFirstPrize(Number(e.target.value))}
+                      onChange={(e) => handleNumericInput(e.target.value, setFirstPrize)}
                       className="w-full bg-transparent pl-8 pr-3 py-1 text-gold-400 font-black text-2xl focus:outline-none"
                     />
                   </div>
@@ -292,11 +315,12 @@ export default function AdminSettingsPage() {
                   <div className="relative flex items-center mt-2">
                     <span className="absolute left-3 text-lg font-bold text-gray-500">₹</span>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       required
-                      min={0}
+                      placeholder="0"
                       value={secondPrize}
-                      onChange={(e) => setSecondPrize(Number(e.target.value))}
+                      onChange={(e) => handleNumericInput(e.target.value, setSecondPrize)}
                       className="w-full bg-transparent pl-8 pr-3 py-1 text-cyber-400 font-black text-2xl focus:outline-none"
                     />
                   </div>
@@ -405,12 +429,12 @@ export default function AdminSettingsPage() {
                     Max Allowed Squad Slots
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     required
-                    min={2}
-                    max={100}
+                    placeholder="48"
                     value={maxSlots}
-                    onChange={(e) => setMaxSlots(Number(e.target.value))}
+                    onChange={(e) => handleNumericInput(e.target.value, setMaxSlots)}
                     className="w-full bg-dark-950 border border-dark-750 focus:border-cyber-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none"
                   />
                   <p className="text-[11px] text-gray-400 mt-1">Default 48 slots for full custom lobby</p>

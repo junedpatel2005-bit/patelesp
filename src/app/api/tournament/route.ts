@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTournament, updateTournament } from "@/lib/storage";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const tournament = await getTournament();
-    return NextResponse.json({ success: true, tournament });
+    return NextResponse.json(
+      { success: true, tournament },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json(
       { success: false, message: "Failed to fetch tournament details" },

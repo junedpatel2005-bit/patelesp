@@ -2,72 +2,79 @@ import { NextRequest, NextResponse } from "next/server";
 import { createTeam, getTournament } from "@/lib/storage";
 import { Player } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { teamName, captainPhone, captainEmail, players, utrNumber, substitutePlayer } = body;
+    const { captainEmail, substitutePlayer } = body;
+    let { teamName, captainPhone, players, utrNumber } = body;
 
-    // Validation
-    if (!teamName || typeof teamName !== "string" || teamName.trim().length < 2) {
+    // Determine at least one player name or team name (only name required)
+    const rawPlayers = Array.isArray(players) ? players : [];
+    const p1Name = rawPlayers[0]?.name?.trim() || "";
+    const rawTeamName = typeof teamName === "string" ? teamName.trim() : "";
+
+    if (!p1Name && !rawTeamName) {
       return NextResponse.json(
-        { success: false, message: "Valid Team Name is required (minimum 2 characters)" },
+        { success: false, message: "Please provide your Name to register" },
         { status: 400 }
       );
     }
 
-    if (!captainPhone || typeof captainPhone !== "string" || captainPhone.trim().length < 10) {
-      return NextResponse.json(
-        { success: false, message: "Valid 10-digit Captain Phone / WhatsApp number is required" },
-        { status: 400 }
-      );
-    }
+    // Auto-generate team name if optional
+    const finalTeamName = rawTeamName || (p1Name ? `${p1Name}'s Squad` : `Squad-${Math.floor(1000 + Math.random() * 9000)}`);
 
-    if (!Array.isArray(players) || players.length !== 4) {
-      return NextResponse.json(
-        { success: false, message: "Exactly 4 players are required for Squad registration" },
-        { status: 400 }
-      );
-    }
+    // Captain Phone is optional (all placeholders optional)
+    const finalCaptainPhone = (typeof captainPhone === "string" && captainPhone.trim()) 
+      ? captainPhone.trim() 
+      : "Not Provided";
 
-    // Validate each player has a name and Free Fire UID
-    for (let i = 0; i < players.length; i++) {
-      const p = players[i] as Player;
-      if (!p.name || p.name.trim().length === 0) {
-        return NextResponse.json(
-          { success: false, message: `Player ${i + 1} name is required` },
-          { status: 400 }
-        );
-      }
-      if (!p.freeFireUid || p.freeFireUid.trim().length < 6) {
-        return NextResponse.json(
-          { success: false, message: `Player ${i + 1} (${p.name}) Free Fire UID must be at least 6 digits` },
-          { status: 400 }
-        );
-      }
-    }
+    // Build 4 players where only name is required, all placeholders are optional
+    const finalPlayers: [Player, Player, Player, Player] = [
+      {
+        name: p1Name || finalTeamName,
+        freeFireUid: rawPlayers[0]?.freeFireUid?.trim() || "N/A",
+        inGameName: rawPlayers[0]?.inGameName?.trim() || "",
+        isCaptain: true,
+      },
+      {
+        name: rawPlayers[1]?.name?.trim() || "Player 2",
+        freeFireUid: rawPlayers[1]?.freeFireUid?.trim() || "N/A",
+        inGameName: rawPlayers[1]?.inGameName?.trim() || "",
+      },
+      {
+        name: rawPlayers[2]?.name?.trim() || "Player 3",
+        freeFireUid: rawPlayers[2]?.freeFireUid?.trim() || "N/A",
+        inGameName: rawPlayers[2]?.inGameName?.trim() || "",
+      },
+      {
+        name: rawPlayers[3]?.name?.trim() || "Player 4",
+        freeFireUid: rawPlayers[3]?.freeFireUid?.trim() || "N/A",
+        inGameName: rawPlayers[3]?.inGameName?.trim() || "",
+      },
+    ];
 
-    if (!utrNumber || typeof utrNumber !== "string" || utrNumber.trim().length < 6) {
-      return NextResponse.json(
-        { success: false, message: "Valid UPI Transaction ID / UTR reference number is required" },
-        { status: 400 }
-      );
-    }
+    // UTR number is optional
+    const finalUtr = (typeof utrNumber === "string" && utrNumber.trim()) 
+      ? utrNumber.trim() 
+      : `PENDING-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const tournament = await getTournament();
 
     const newTeam = await createTeam({
-      teamName: teamName.trim(),
-      captainPhone: captainPhone.trim(),
+      teamName: finalTeamName,
+      captainPhone: finalCaptainPhone,
       captainEmail: captainEmail?.trim() || undefined,
-      players: players as [Player, Player, Player, Player],
+      players: finalPlayers,
       substitutePlayer: substitutePlayer?.name ? substitutePlayer : undefined,
-      utrNumber: utrNumber.trim(),
+      utrNumber: finalUtr,
       entryFeePaid: tournament.entryFee,
     });
 
     return NextResponse.json({
       success: true,
-      message: "Team successfully registered for PATELESP Free Fire Tournament!",
+      message: "Squad registered successfully for PATELESP Free Fire Tournament!",
       team: newTeam,
     });
   } catch (error) {

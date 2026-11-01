@@ -58,10 +58,18 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-dark-850 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400 gap-3">
+        <div className="border-t border-dark-850 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400 gap-4">
           <p>© {new Date().getFullYear()} PATELESP Arena. All rights reserved.</p>
-          <p className="text-gray-400 text-center sm:text-right">
-            Free Fire is a registered trademark of Garena International. PATELESP is not affiliated with or endorsed by Garena.
+          
+          {/* Prominent Creator Attribution */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-fire-500/10 border border-fire-500/25 text-gray-300 shadow-glow-fire/10">
+            <span className="w-2 h-2 rounded-full bg-fire-500 animate-pulse" />
+            <span className="text-[11px] font-medium text-gray-400">Designed & Created by</span>
+            <span className="text-xs font-black text-fire-400 tracking-wide">Juned Patel</span>
+          </div>
+
+          <p className="text-gray-400 text-center sm:text-right text-[11px]">
+            Free Fire is a registered trademark of Garena International.
           </p>
         </div>
       </div>

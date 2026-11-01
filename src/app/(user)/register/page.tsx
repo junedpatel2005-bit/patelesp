@@ -68,30 +68,11 @@ export default function RegisterPage() {
     e.preventDefault();
     setErrorMsg("");
 
-    // Validations
-    if (!teamName.trim()) {
-      setErrorMsg("Please enter your Squad / Team Name");
-      return;
-    }
-
-    if (!captainPhone.trim() || captainPhone.length < 10) {
-      setErrorMsg("Please enter a valid 10-digit WhatsApp / Phone number for Captain");
-      return;
-    }
-
-    for (let i = 0; i < 4; i++) {
-      if (!players[i].name.trim()) {
-        setErrorMsg(`Please enter Player ${i + 1} Name`);
-        return;
-      }
-      if (!players[i].freeFireUid.trim() || players[i].freeFireUid.trim().length < 6) {
-        setErrorMsg(`Player ${i + 1} (${players[i].name || "P" + (i + 1)}) must have a valid Free Fire UID (minimum 6 digits)`);
-        return;
-      }
-    }
-
-    if (!utrNumber.trim() || utrNumber.trim().length < 6) {
-      setErrorMsg("Please enter your 12-digit UPI Transaction ID / UTR reference number from payment app");
+    // Only Name is required! All other placeholders/fields are optional
+    const p1Name = players[0]?.name?.trim();
+    const tName = teamName.trim();
+    if (!p1Name && !tName) {
+      setErrorMsg("Please enter your Name to register");
       return;
     }
 
@@ -102,12 +83,12 @@ export default function RegisterPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          teamName,
-          captainPhone,
-          captainEmail: captainEmail || undefined,
+          teamName: tName || (p1Name ? `${p1Name}'s Squad` : "Patel Squad"),
+          captainPhone: captainPhone.trim() || "Not Provided",
+          captainEmail: captainEmail?.trim() || undefined,
           players,
           substitutePlayer: includeSub && substitute.name ? substitute : undefined,
-          utrNumber,
+          utrNumber: utrNumber.trim() || undefined,
         }),
       });
 
@@ -185,25 +166,24 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* STEP 1: TEAM & CAPTAIN CONTACT */}
-          <div className="gaming-card rounded-2xl p-6 sm:p-8">
+          <div className="gaming-card rounded-2xl p-5 sm:p-8">
             <div className="flex items-center gap-3 pb-4 mb-6 border-b border-dark-800">
               <div className="w-9 h-9 rounded-xl bg-fire-500/20 text-fire-400 flex items-center justify-center font-black">
                 1
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Squad & Captain Information</h3>
-                <p className="text-xs text-gray-400">Basic details for identification and match communications</p>
+                <h3 className="text-base sm:text-lg font-bold text-white">Squad & Contact Details</h3>
+                <p className="text-xs text-gray-400">All fields below are optional - enter if available</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
               <div className="sm:col-span-2">
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-2">
-                  Team Name <span className="text-fire-500">*</span>
+                  Team Name <span className="text-gray-400 font-normal">(Optional)</span>
                 </label>
                 <input
                   type="text"
-                  required
                   placeholder="e.g. SoulFire Esports, Total Dominators"
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
@@ -213,22 +193,21 @@ export default function RegisterPage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-2">
-                  Captain WhatsApp / Phone <span className="text-fire-500">*</span>
+                  Captain WhatsApp / Phone <span className="text-gray-400 font-normal">(Optional)</span>
                 </label>
                 <input
                   type="tel"
-                  required
                   placeholder="10-digit mobile number"
                   value={captainPhone}
                   onChange={(e) => setCaptainPhone(e.target.value)}
                   className="w-full bg-dark-900 border border-dark-750 focus:border-fire-500 rounded-xl px-4 py-3 text-white placeholder-gray-400 text-sm focus:outline-none transition-all"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">Free Fire Room ID & Pass will be sent to this WhatsApp</p>
+                <p className="text-[11px] text-gray-400 mt-1">Room ID will be sent here if provided</p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-2">
-                  Captain Email (Optional)
+                  Captain Email <span className="text-gray-400 font-normal">(Optional)</span>
                 </label>
                 <input
                   type="email"
@@ -241,19 +220,19 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* STEP 2: 4-PLAYER ROSTER (EXACTLY 4 PLAYERS) */}
-          <div className="gaming-card rounded-2xl p-6 sm:p-8">
+          {/* STEP 2: PLAYERS ROSTER (ONLY NAME REQUIRED) */}
+          <div className="gaming-card rounded-2xl p-5 sm:p-8">
             <div className="flex items-center gap-3 pb-4 mb-6 border-b border-dark-800">
               <div className="w-9 h-9 rounded-xl bg-fire-500/20 text-fire-400 flex items-center justify-center font-black">
                 2
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">4-Player Squad Roster</h3>
-                <p className="text-xs text-gray-400">All 4 players must match in-game Free Fire UIDs inside custom room</p>
+                <h3 className="text-base sm:text-lg font-bold text-white">Squad Players (Only Name Required)</h3>
+                <p className="text-xs text-gray-400">Only your name is mandatory; all other placeholders and fields are optional</p>
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-5">
               {players.map((player, idx) => (
                 <div
                   key={idx}
@@ -262,20 +241,22 @@ export default function RegisterPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black tracking-wider uppercase text-fire-400 flex items-center gap-1.5">
                       <UserCheck className="w-4 h-4" />
-                      Player #{idx + 1} {idx === 0 && "(Captain)"}
+                      Player #{idx + 1} {idx === 0 ? "(Captain / You)" : "(Teammate)"}
                     </span>
-                    <span className="text-[11px] text-gray-400 font-medium">Free Fire Squad Member</span>
+                    <span className="text-[11px] text-gray-400 font-medium">
+                      {idx === 0 ? "Required Name" : "Optional"}
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[11px] font-semibold text-gray-400 mb-1">
-                        Full Name / Nickname <span className="text-fire-500">*</span>
+                      <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                        Player Name {idx === 0 ? <span className="text-fire-500 font-bold">* (Required)</span> : <span className="text-gray-400">(Optional)</span>}
                       </label>
                       <input
                         type="text"
-                        required
-                        placeholder={`Player ${idx + 1} Name`}
+                        required={idx === 0}
+                        placeholder={idx === 0 ? "Enter Your Name *" : `Player ${idx + 1} Name`}
                         value={player.name}
                         onChange={(e) => handlePlayerChange(idx, "name", e.target.value)}
                         className="w-full bg-dark-950 border border-dark-750 focus:border-fire-500 rounded-lg px-3 py-2 text-white text-xs focus:outline-none transition-all"
@@ -284,11 +265,10 @@ export default function RegisterPage() {
 
                     <div>
                       <label className="block text-[11px] font-semibold text-gray-400 mb-1">
-                        Free Fire UID <span className="text-fire-500">*</span>
+                        Free Fire UID <span className="text-gray-400 font-normal">(Optional)</span>
                       </label>
                       <input
                         type="text"
-                        required
                         placeholder="e.g. 192837465"
                         value={player.freeFireUid}
                         onChange={(e) => handlePlayerChange(idx, "freeFireUid", e.target.value)}
@@ -298,7 +278,7 @@ export default function RegisterPage() {
 
                     <div>
                       <label className="block text-[11px] font-semibold text-gray-400 mb-1">
-                        In-Game Name (IGN)
+                        In-Game Name <span className="text-gray-400 font-normal">(Optional)</span>
                       </label>
                       <input
                         type="text"
@@ -328,7 +308,7 @@ export default function RegisterPage() {
                 {includeSub && (
                   <div className="mt-3 p-4 rounded-xl bg-dark-900/60 border border-dark-800 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[11px] font-semibold text-gray-400 mb-1">Sub Name</label>
+                      <label className="block text-[11px] font-semibold text-gray-400 mb-1">Sub Name (Optional)</label>
                       <input
                         type="text"
                         placeholder="Substitute Name"
@@ -338,7 +318,7 @@ export default function RegisterPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold text-gray-400 mb-1">Sub Free Fire UID</label>
+                      <label className="block text-[11px] font-semibold text-gray-400 mb-1">Sub Free Fire UID (Optional)</label>
                       <input
                         type="text"
                         placeholder="Free Fire UID"
@@ -348,7 +328,7 @@ export default function RegisterPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold text-gray-400 mb-1">Sub IGN</label>
+                      <label className="block text-[11px] font-semibold text-gray-400 mb-1">Sub IGN (Optional)</label>
                       <input
                         type="text"
                         placeholder="In-Game Name"
@@ -364,26 +344,26 @@ export default function RegisterPage() {
           </div>
 
           {/* STEP 3: UPI ENTRY FEE PAYMENT */}
-          <div className="gaming-card rounded-2xl p-6 sm:p-8 border-fire-500/30">
+          <div className="gaming-card rounded-2xl p-5 sm:p-8 border-fire-500/30">
             <div className="flex items-center gap-3 pb-4 mb-6 border-b border-dark-800">
               <div className="w-9 h-9 rounded-xl bg-fire-500/20 text-fire-400 flex items-center justify-center font-black">
                 3
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Entry Fee Payment (₹{entryFee})</h3>
-                <p className="text-xs text-gray-400">Scan QR Code using PhonePe, Google Pay, or Paytm and submit UTR reference</p>
+                <h3 className="text-base sm:text-lg font-bold text-white">Entry Fee Payment (₹{entryFee})</h3>
+                <p className="text-xs text-gray-400">Scan QR Code using PhonePe, Google Pay, or Paytm (UTR is optional)</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
               {/* QR Code & UPI Copy */}
-              <div className="flex flex-col items-center text-center p-6 bg-dark-900 rounded-2xl border border-dark-800">
+              <div className="flex flex-col items-center text-center p-5 sm:p-6 bg-dark-900 rounded-2xl border border-dark-800">
                 <div className="p-3 bg-white rounded-2xl shadow-glow-fire/20 mb-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={qrUrl}
                     alt="PATELESP UPI QR Code"
-                    className="w-44 h-44 rounded-lg"
+                    className="w-36 h-36 sm:w-44 sm:h-44 rounded-lg"
                   />
                 </div>
 
@@ -407,36 +387,35 @@ export default function RegisterPage() {
               <div className="space-y-4">
                 <div className="p-4 rounded-xl bg-fire-500/10 border border-fire-500/20 text-xs text-fire-300 space-y-1">
                   <p className="font-bold flex items-center gap-1.5 text-fire-400">
-                    <Smartphone className="w-4 h-4" /> How to find UTR Reference Number:
+                    <Smartphone className="w-4 h-4" /> Payment Reference:
                   </p>
-                  <p>1. Open your payment app after sending ₹{entryFee}.</p>
-                  <p>2. View the payment receipt and find the 12-digit number (labeled as &quot;UTR&quot;, &quot;UPI Ref ID&quot;, or &quot;Transaction ID&quot;).</p>
-                  <p>3. Paste the 12-digit number below for instant admin verification.</p>
+                  <p>1. Scan the QR code or send ₹{entryFee} to {upiId}.</p>
+                  <p>2. Enter your 12-digit UTR below if available, or submit and verify later.</p>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-200 mb-2">
-                    12-Digit UTR / Transaction Ref Number <span className="text-fire-500">*</span>
+                    12-Digit UTR / UPI Ref ID <span className="text-gray-400 font-normal">(Optional)</span>
                   </label>
                   <input
                     type="text"
-                    required
-                    placeholder="e.g. 431289124012"
+                    placeholder="e.g. 431289124012 (Optional)"
                     value={utrNumber}
                     onChange={(e) => setUtrNumber(e.target.value)}
                     className="w-full bg-dark-900 border border-dark-750 focus:border-fire-500 rounded-xl px-4 py-3 text-white font-mono text-sm tracking-wider focus:outline-none transition-all"
                   />
+                  <p className="text-[11px] text-gray-400 mt-1">If not paid yet, leave empty and register now</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* SUBMIT BUTTON */}
-          <div className="text-center pt-2">
+          <div className="text-center pt-2 space-y-3">
             <button
               type="submit"
               disabled={loading}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-12 py-4 rounded-2xl font-black text-base uppercase tracking-wider bg-fire-gradient text-white shadow-glow-fire hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-4 rounded-2xl font-black text-sm sm:text-base uppercase tracking-wider bg-fire-gradient text-white shadow-glow-fire hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
             >
               {loading ? (
                 <>
@@ -451,9 +430,14 @@ export default function RegisterPage() {
                 </>
               )}
             </button>
-            <p className="text-[11px] text-gray-400 mt-3">
-              By registering, you agree to PATELESP fairplay and Free Fire tournament guidelines.
+            <p className="text-[11px] text-gray-400">
+              Only Name is required • Fast instant squad registration
             </p>
+            <div className="pt-2">
+              <span className="text-xs font-semibold text-gray-400">
+                Created by <strong className="text-fire-400">Juned Patel</strong>
+              </span>
+            </div>
           </div>
         </form>
       </div>

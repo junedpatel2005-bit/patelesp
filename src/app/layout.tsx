@@ -11,9 +11,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "PATELESP | Free Fire Esports Squad Tournament",
-  description: "Join the official PATELESP Free Fire Squad Tournament. Win 1st & 2nd cash prizes, 48 slots battle royale with instant UPI payouts.",
-  keywords: ["Free Fire Tournament", "PATELESP", "Patel Esports", "Free Fire Cup", "Free Fire Squad Registration", "Esports India"],
-  authors: [{ name: "Patel Esports" }],
+  description: "Join the official PATELESP Free Fire Squad Tournament. Win 1st & 2nd cash prizes, 48 slots battle royale with instant UPI payouts. Created by Juned Patel.",
+  keywords: ["Free Fire Tournament", "PATELESP", "Patel Esports", "Juned Patel", "Free Fire Cup", "Free Fire Squad Registration", "Esports India"],
+  authors: [{ name: "Juned Patel" }, { name: "Patel Esports" }],
+  creator: "Juned Patel",
 };
 
 export default function RootLayout({
