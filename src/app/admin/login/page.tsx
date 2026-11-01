@@ -90,7 +90,6 @@ export default function AdminLoginPage() {
                 />
                 <Key className="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2" />
               </div>
-              <p className="text-[11px] text-gray-400 mt-2">Default PIN: <code className="text-cyber-400 font-mono">patelesp2026</code></p>
             </div>
 
             <button

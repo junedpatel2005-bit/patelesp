@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { passcode } = await req.json();
-    const expectedPasscode = process.env.ADMIN_SECRET_KEY || "patelesp2026";
+    const expectedPasscode = process.env.ADMIN_SECRET_KEY || "2412";
 
     if (!passcode || passcode.trim() !== expectedPasscode.trim()) {
       const current = failedAttempts.get(ip) || { count: 0, blockedUntil: 0 };

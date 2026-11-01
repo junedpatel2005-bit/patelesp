@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const adminKey = req.headers.get("x-admin-key");
-    const expectedKey = process.env.ADMIN_SECRET_KEY || "patelesp2026";
+    const expectedKey = process.env.ADMIN_SECRET_KEY || "2412";
 
     if (adminKey !== expectedKey) {
       return NextResponse.json(

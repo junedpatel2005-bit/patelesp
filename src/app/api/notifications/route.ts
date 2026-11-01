@@ -4,7 +4,7 @@ import { getNotifications, markNotificationsAsRead } from "@/lib/storage";
 export async function GET(req: NextRequest) {
   try {
     const adminKey = req.headers.get("x-admin-key");
-    const expectedKey = process.env.ADMIN_SECRET_KEY || "patelesp2026";
+    const expectedKey = process.env.ADMIN_SECRET_KEY || "2412";
 
     if (adminKey !== expectedKey) {
       return NextResponse.json(
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const adminKey = req.headers.get("x-admin-key");
-    const expectedKey = process.env.ADMIN_SECRET_KEY || "patelesp2026";
+    const expectedKey = process.env.ADMIN_SECRET_KEY || "2412";
 
     if (adminKey !== expectedKey) {
       return NextResponse.json(

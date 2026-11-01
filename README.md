@@ -24,7 +24,7 @@ Branded as **patelesp** (Patel Esports), it provides a split architecture with a
 
 ### 🛡️ Admin Experience (`/admin`)
 - **Passcode Protected**: Secure admin authentication screen (`/admin/login`).
-  - **Default PIN**: `patelesp2026`
+  - **Default PIN**: `2412`
 - **Real-time Sound Chimes & Notifications**:
   - Web Audio API synthesizer generates an esports ping alert whenever a new team registers.
   - Real-time notification drawer with unread counter.
@@ -66,7 +66,7 @@ Branded as **patelesp** (Patel Esports), it provides a split architecture with a
 
 3. Open [http://localhost:3000](http://localhost:3000) in your browser.
    - User portal: `http://localhost:3000`
-   - Admin portal: `http://localhost:3000/admin` (PIN: `patelesp2026`)
+   - Admin portal: `http://localhost:3000/admin` (PIN: `2412`)
 
 ---
 
@@ -102,6 +102,6 @@ You can verify connection status anytime at `/api/db-status` or in `/admin/setti
 2. Go to [vercel.com](https://vercel.com) and click **"Add New Project"**.
 3. Import your GitHub repository.
 4. (Optional) Set Environment Variables in Vercel settings:
-   - `ADMIN_SECRET_KEY`: `patelesp2026` (or your custom password)
+   - `ADMIN_SECRET_KEY`: `2412` (or your custom password)
    - `NEXT_PUBLIC_UPI_ID`: `patelesp@upi`
 5. Click **Deploy**!
