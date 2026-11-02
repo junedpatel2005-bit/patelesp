@@ -6,41 +6,53 @@ import { io, Socket } from "socket.io-client";
 let socketInstance: Socket | null = null;
 
 /**
+ * Check if the current environment supports persistent WebSockets.
+ * Vercel is a serverless platform that does NOT support long-lived WebSockets.
+ */
+function isWebSocketSupported(): boolean {
+  if (typeof window === "undefined") return false;
+  // Disable WebSocket on Vercel domain to prevent console spam
+  if (window.location.hostname.includes("vercel.app")) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * Get or create the singleton Socket.IO client instance
  */
 export function getSocket(): Socket | null {
-  if (typeof window === "undefined") {
+  if (typeof window === "undefined" || !isWebSocketSupported()) {
     return null;
   }
 
   if (!socketInstance) {
-    // When in browser, connect to current origin using standard /socket.io path
-    socketInstance = io({
-      path: "/socket.io",
-      transports: ["websocket", "polling"],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
-    });
+    try {
+      socketInstance = io({
+        path: "/socket.io",
+        transports: ["polling", "websocket"],
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: 2, // Stop retrying after 2 attempts to keep console clean
+        reconnectionDelay: 2000,
+        timeout: 5000,
+      });
 
-    socketInstance.on("connect", () => {
-      console.log(`[Socket.IO Client] Connected to real-time server (ID: ${socketInstance?.id})`);
-    });
+      socketInstance.on("connect", () => {
+        // Connected silently
+      });
 
-    socketInstance.on("disconnect", (reason) => {
-      console.log(`[Socket.IO Client] Disconnected: ${reason}`);
-    });
+      socketInstance.on("disconnect", () => {
+        // Disconnected silently
+      });
 
-    socketInstance.on("connect_error", (err) => {
-      console.warn(`[Socket.IO Client] Connection warning:`, err.message);
-    });
-  }
-
-  if (socketInstance && !socketInstance.connected) {
-    socketInstance.connect();
+      socketInstance.on("connect_error", () => {
+        // Silently disconnect if failed so console stays clean
+        socketInstance?.disconnect();
+      });
+    } catch (e) {
+      return null;
+    }
   }
 
   return socketInstance;

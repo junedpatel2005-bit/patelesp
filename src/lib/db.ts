@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { DatabaseSchema, TournamentData, TeamRegistration, PriceHistoryRecord } from "./types";
-import { supabase, isSupabaseReady } from "./supabase";
+import { supabase, isSupabaseReady, executeWithCloudFallback } from "./supabase";
 
 const DB_DIR = path.join(process.cwd(), "data");
 const DB_FILE = path.join(DB_DIR, "tournament_db.json");
@@ -103,28 +103,31 @@ export async function getTournament(): Promise<TournamentData> {
 
   if (isSupabaseReady() && supabase) {
     try {
-      const { data, error } = await supabase
-        .from("tournaments")
-        .select("*")
-        .eq("id", "patel-ff-season-1")
-        .maybeSingle();
+      const { data, error } = await executeWithCloudFallback(async (client) => {
+        return client
+          .from("tournaments")
+          .select("*")
+          .eq("id", "patel-ff-season-1")
+          .maybeSingle();
+      });
 
       if (!error && data) {
+        const row = data as any;
         const rulesObj =
-          typeof data.rules === "object" && data.rules !== null && !Array.isArray(data.rules)
-            ? data.rules
+          typeof row.rules === "object" && row.rules !== null && !Array.isArray(row.rules)
+            ? row.rules
             : {};
 
         const cloudTournament: TournamentData = {
-          name: data.title || local.tournament.name || "PATELESP",
+          name: row.title || local.tournament.name || "PATELESP",
           developer: "Juned",
-          whatsappNumber: data.contact_number || local.tournament.whatsappNumber || "+918849596369",
+          whatsappNumber: row.contact_number || local.tournament.whatsappNumber || "+918849596369",
           whatsappGroupLink: rulesObj.whatsappGroupLink || local.tournament.whatsappGroupLink || "https://chat.whatsapp.com/invite",
-          paymentNumber: data.upi_id || local.tournament.paymentNumber || "+919054358668",
-          paymentName: data.upi_name || local.tournament.paymentName || "Juned Rafik Patel",
-          tournamentDate: data.match_date || local.tournament.tournamentDate || "07 November 2026",
-          tournamentDay: data.tagline || local.tournament.tournamentDay || "Saturday",
-          tournamentTime: data.match_time || local.tournament.tournamentTime || "09:00 PM IST",
+          paymentNumber: row.upi_id || local.tournament.paymentNumber || "+919054358668",
+          paymentName: row.upi_name || local.tournament.paymentName || "Juned Rafik Patel",
+          tournamentDate: row.match_date || local.tournament.tournamentDate || "07 November 2026",
+          tournamentDay: row.tagline || local.tournament.tournamentDay || "Saturday",
+          tournamentTime: row.match_time || local.tournament.tournamentTime || "09:00 PM IST",
           entryTime: rulesObj.entryTime || local.tournament.entryTime || "08:45 PM IST",
           hidePointsTable:
             rulesObj.hidePointsTable !== undefined
@@ -132,17 +135,17 @@ export async function getTournament(): Promise<TournamentData> {
               : local.tournament.hidePointsTable !== undefined
               ? local.tournament.hidePointsTable
               : true,
-          squadPrice: Number(data.entry_fee ?? local.tournament.squadPrice),
-          winnerPrize: Number(data.first_prize ?? local.tournament.winnerPrize),
-          runnerUpPrize: Number(data.second_prize ?? local.tournament.runnerUpPrize),
-          thirdPrize: Number(data.per_kill_prize ?? local.tournament.thirdPrize),
+          squadPrice: Number(row.entry_fee ?? local.tournament.squadPrice),
+          winnerPrize: Number(row.first_prize ?? local.tournament.winnerPrize),
+          runnerUpPrize: Number(row.second_prize ?? local.tournament.runnerUpPrize),
+          thirdPrize: Number(row.per_kill_prize ?? local.tournament.thirdPrize),
           maxTeams: 12,
           maxPlayers: 48,
           isRegistrationOpen: true,
           roomId: rulesObj.roomId || local.tournament.roomId || "",
           roomPassword: rulesObj.roomPassword || local.tournament.roomPassword || "",
           isRoomLive: rulesObj.isRoomLive !== undefined ? rulesObj.isRoomLive : local.tournament.isRoomLive || false,
-          updatedAt: data.updated_at || new Date().toISOString(),
+          updatedAt: row.updated_at || new Date().toISOString(),
         };
 
         local.tournament = cloudTournament;
@@ -255,16 +258,14 @@ export async function updateTournamentSettings(
         },
       };
 
-      const { error: upsertErr } = await supabase
-        .from("tournaments")
-        .upsert(fullCloudPayload, { onConflict: "id" });
+      const { error: upsertErr, clientUsed } = await executeWithCloudFallback(async (client) => {
+        return client.from("tournaments").upsert(fullCloudPayload, { onConflict: "id" }).select();
+      });
       if (upsertErr) {
-        console.error("Supabase upsert error:", upsertErr.message);
-        throw new Error(`Failed to update cloud tournament database: ${upsertErr.message}`);
+        console.warn(`Supabase upsert warning (${clientUsed}):`, upsertErr.message);
       }
     } catch (e: any) {
-      console.error("Supabase update error:", e?.message || e);
-      throw e;
+      console.warn("Supabase update non-fatal exception:", e?.message || e);
     }
   }
 
@@ -305,13 +306,13 @@ export async function getTeams(): Promise<TeamRegistration[]> {
 
   if (isSupabaseReady() && supabase) {
     try {
-      const { data, error } = await supabase
-        .from("teams")
-        .select("*")
-        .order("slot_number", { ascending: true });
+      const { data, error } = await executeWithCloudFallback(async (client) => {
+        return client.from("teams").select("*").order("slot_number", { ascending: true });
+      });
 
       if (!error && Array.isArray(data)) {
-        const cloudTeams: TeamRegistration[] = data.map((row: any) => {
+        const teamRows = data as any[];
+        const cloudTeams: TeamRegistration[] = teamRows.map((row: any) => {
           const players = Array.isArray(row.players) ? row.players : [];
           const rawStatus = (row.payment_status || "").toLowerCase();
           const pStatus: "paid" | "unpaid" | "pending" =
@@ -432,31 +433,31 @@ export async function registerTeam(data: {
   // Sync to Supabase
   if (isSupabaseReady() && supabase) {
     try {
-      const { error: insertErr } = await supabase.from("teams").insert({
-        id: teamId,
-        team_name: newTeam.teamName,
-        captain_phone: newTeam.igl.phone,
-        slot_number: assignedSlot,
-        utr_number: newTeam.paymentUtr || `DIRECT-${Date.now()}`,
-        entry_fee_paid: entryFee,
-        payment_status: initialPaymentStatus === "paid" ? "verified" : initialPaymentStatus,
-        status: initialPaymentStatus === "paid" ? "approved" : "pending",
-        players: [
-          { name: newTeam.igl.name, uid: newTeam.igl.uid, isCaptain: true },
-          { name: newTeam.player2.name, uid: newTeam.player2.uid },
-          { name: newTeam.player3.name, uid: newTeam.player3.uid },
-          { name: newTeam.player4.name, uid: newTeam.player4.uid },
-        ],
-        created_at: now,
+      const { error: insertErr, clientUsed } = await executeWithCloudFallback(async (client) => {
+        return client.from("teams").insert({
+          id: teamId,
+          team_name: newTeam.teamName,
+          captain_phone: newTeam.igl.phone,
+          slot_number: assignedSlot,
+          utr_number: newTeam.paymentUtr || `DIRECT-${Date.now()}`,
+          entry_fee_paid: entryFee,
+          payment_status: initialPaymentStatus === "paid" ? "verified" : initialPaymentStatus,
+          status: initialPaymentStatus === "paid" ? "approved" : "pending",
+          players: [
+            { name: newTeam.igl.name, uid: newTeam.igl.uid, isCaptain: true },
+            { name: newTeam.player2.name, uid: newTeam.player2.uid },
+            { name: newTeam.player3.name, uid: newTeam.player3.uid },
+            { name: newTeam.player4.name, uid: newTeam.player4.uid },
+          ],
+          created_at: now,
+        });
       });
 
       if (insertErr) {
-        console.error("Supabase registerTeam error:", insertErr.message);
-        throw new Error(`Failed to save team registration to cloud database: ${insertErr.message}`);
+        console.warn(`Supabase registerTeam warning (${clientUsed}):`, insertErr.message);
       }
     } catch (e: any) {
-      console.error("Supabase registerTeam exception:", e?.message || e);
-      throw e;
+      console.warn("Supabase registerTeam non-fatal exception:", e?.message || e);
     }
   }
 
@@ -611,7 +612,9 @@ export async function updatePlayerInTeam(
 export async function resetAllTeams(): Promise<boolean> {
   if (isSupabaseReady() && supabase) {
     try {
-      await supabase.from("teams").delete().neq("id", "none");
+      await executeWithCloudFallback(async (client) => {
+        return client.from("teams").delete().neq("id", "none");
+      });
     } catch (e) {
       console.error("Supabase resetAllTeams error:", e);
     }
@@ -651,15 +654,17 @@ export async function updateTeamPaymentStatus(
   if (isSupabaseReady() && supabase) {
     try {
       const dbStatus = paymentStatus === "paid" ? "verified" : paymentStatus;
-      await supabase
-        .from("teams")
-        .update({
-          payment_status: dbStatus,
-          status: paymentStatus === "paid" ? "approved" : "pending",
-          utr_number: team.paymentUtr || `DIRECT-${Date.now()}`,
-          entry_fee_paid: team.paymentAmount || 40,
-        })
-        .eq("id", team.id);
+      await executeWithCloudFallback(async (client) => {
+        return client
+          .from("teams")
+          .update({
+            payment_status: dbStatus,
+            status: paymentStatus === "paid" ? "approved" : "pending",
+            utr_number: team.paymentUtr || `DIRECT-${Date.now()}`,
+            entry_fee_paid: team.paymentAmount || 40,
+          })
+          .eq("id", team.id);
+      });
     } catch (e) {
       console.error("Supabase updateTeamPaymentStatus error:", e);
     }
