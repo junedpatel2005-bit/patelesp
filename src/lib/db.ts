@@ -224,9 +224,37 @@ export async function updateTournamentSettings(
             : true,
       };
 
-      const { error } = await supabase.from("tournaments").update(sbUpdate).eq("id", "patel-ff-season-1");
+      const { data: updatedRows, error } = await supabase
+        .from("tournaments")
+        .update(sbUpdate)
+        .eq("id", "patel-ff-season-1")
+        .select();
+
       if (error) {
         console.error("Supabase update error:", error.message);
+        throw new Error(
+          `Supabase Error: ${error.message}. Please run the SQL schema in your Supabase SQL Editor.`
+        );
+      }
+
+      // If the row doesn't exist yet, insert it automatically
+      if (!updatedRows || updatedRows.length === 0) {
+        const { error: insertErr } = await supabase.from("tournaments").insert({
+          id: "patel-ff-season-1",
+          title: "PATELESP FREE FIRE SQUAD SHOWDOWN",
+          tagline: updates.tournamentDay || "Sunday",
+          game: "Free Fire Max / Free Fire",
+          map: "Bermuda",
+          mode: "Squad Battle Royale (4 Players)",
+          contact_number: updates.whatsappNumber || "+918849596369",
+          upi_id: updates.paymentNumber || "+919054358668",
+          upi_name: updates.paymentName || "Juned Rafik Patel",
+          ...sbUpdate,
+        });
+        if (insertErr) {
+          console.error("Supabase insert error:", insertErr.message);
+          throw new Error(`Supabase Insert Error: ${insertErr.message}`);
+        }
       }
     } catch (e) {
       console.error("Supabase update exception:", e);
