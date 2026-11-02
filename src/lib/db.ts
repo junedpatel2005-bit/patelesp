@@ -223,42 +223,52 @@ export async function updateTournamentSettings(
   }
   persistLocalFile(local);
 
-  // 2. Sync to Supabase Cloud Database using upsert (handles insert & update cleanly)
+  // 2. Sync to Supabase Cloud Database using upsert with all required schema columns
   if (isSupabaseReady() && supabase) {
     try {
-      const sbUpdate: any = {
+      const fullCloudPayload: any = {
         id: "patel-ff-season-1",
+        title: local.tournament.name || "PATELESP FREE FIRE SQUAD SHOWDOWN",
+        tagline: updates.tournamentDay || local.tournament.tournamentDay || "Saturday",
+        game: "Free Fire Max / Free Fire",
+        map: "Bermuda",
+        mode: "Squad Battle Royale (4 Players)",
+        contact_number: updates.whatsappNumber || local.tournament.whatsappNumber || "+918849596369",
+        match_date: updates.tournamentDate || local.tournament.tournamentDate || "07 November 2026",
+        match_time: updates.tournamentTime || local.tournament.tournamentTime || "09:00 PM IST",
+        upi_id: updates.paymentNumber || local.tournament.paymentNumber || "+919054358668",
+        upi_name: updates.paymentName || local.tournament.paymentName || "Juned Rafik Patel",
+        entry_fee: squadPrice,
+        first_prize: winnerPrize,
+        second_prize: runnerUpPrize,
+        per_kill_prize: thirdPrize,
+        total_prize_pool: totalPrizePool,
+        max_slots: 48,
+        room_id: updates.roomId ?? local.tournament.roomId ?? "",
+        room_password: updates.roomPassword ?? local.tournament.roomPassword ?? "",
+        room_announced: Boolean(updates.roomId ?? local.tournament.roomId),
         updated_at: now,
-      };
-      if (updates.squadPrice !== undefined) sbUpdate.entry_fee = Number(updates.squadPrice);
-      if (updates.winnerPrize !== undefined) sbUpdate.first_prize = Number(updates.winnerPrize);
-      if (updates.runnerUpPrize !== undefined) sbUpdate.second_prize = Number(updates.runnerUpPrize);
-      if (updates.thirdPrize !== undefined) sbUpdate.per_kill_prize = Number(updates.thirdPrize);
-      if (isPriceChange) sbUpdate.total_prize_pool = totalPrizePool;
-      if (updates.tournamentDate) sbUpdate.match_date = updates.tournamentDate;
-      if (updates.tournamentDay) sbUpdate.tagline = updates.tournamentDay;
-      if (updates.tournamentTime) sbUpdate.match_time = updates.tournamentTime;
-      if (updates.paymentNumber) sbUpdate.upi_id = updates.paymentNumber;
-      if (updates.paymentName) sbUpdate.upi_name = updates.paymentName;
-      if (updates.whatsappNumber) sbUpdate.contact_number = updates.whatsappNumber;
-
-      sbUpdate.rules = {
-        entryTime: updates.entryTime || local.tournament.entryTime || "08:45 PM IST",
-        hidePointsTable:
-          updates.hidePointsTable !== undefined
-            ? updates.hidePointsTable
-            : local.tournament.hidePointsTable !== undefined
-            ? local.tournament.hidePointsTable
-            : true,
-        whatsappGroupLink: updates.whatsappGroupLink ?? local.tournament.whatsappGroupLink,
-        roomId: updates.roomId ?? local.tournament.roomId,
-        roomPassword: updates.roomPassword ?? local.tournament.roomPassword,
-        isRoomLive: updates.isRoomLive !== undefined ? updates.isRoomLive : local.tournament.isRoomLive,
+        rules: {
+          entryTime: updates.entryTime || local.tournament.entryTime || "08:45 PM IST",
+          hidePointsTable:
+            updates.hidePointsTable !== undefined
+              ? updates.hidePointsTable
+              : local.tournament.hidePointsTable !== undefined
+              ? local.tournament.hidePointsTable
+              : true,
+          whatsappGroupLink: updates.whatsappGroupLink ?? local.tournament.whatsappGroupLink ?? "https://chat.whatsapp.com/invite",
+          roomId: updates.roomId ?? local.tournament.roomId ?? "",
+          roomPassword: updates.roomPassword ?? local.tournament.roomPassword ?? "",
+          isRoomLive: updates.isRoomLive !== undefined ? updates.isRoomLive : (local.tournament.isRoomLive ?? false),
+        },
       };
 
-      await supabase.from("tournaments").upsert(sbUpdate);
+      const { error: upsertErr } = await supabase.from("tournaments").upsert(fullCloudPayload);
+      if (upsertErr) {
+        console.warn("Supabase upsert warning:", upsertErr.message);
+      }
     } catch (e: any) {
-      // Non-fatal, local DB is already updated
+      console.warn("Supabase update non-fatal exception:", e?.message || e);
     }
   }
 
