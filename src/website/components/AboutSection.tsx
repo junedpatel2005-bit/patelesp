@@ -40,29 +40,38 @@ export default function AboutSection() {
             </div>
           </div>
 
-          {/* QR Code Next Plan Notice Card */}
+          {/* QR Code Card */}
           <div className="bg-black border border-red-900/40 rounded-2xl p-6 sm:p-8 relative overflow-hidden">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-red-950 border border-red-600/50 flex items-center justify-center text-red-400">
-                <QrCode className="w-5 h-5" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-red-950 border border-red-600/50 flex items-center justify-center text-red-400">
+                  <QrCode className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-wider">
+                    OFFICIAL ENTRY FEE &amp; QR
+                  </h3>
+                  <span className="text-[10px] uppercase font-bold tracking-widest bg-emerald-600 text-white px-2 py-0.5 rounded">
+                    LIVE &amp; ACTIVE
+                  </span>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-black text-white uppercase tracking-wider">
-                  ENTRY FEE &amp; QR CODE
-                </h3>
-                <span className="text-[10px] uppercase font-bold tracking-widest bg-red-600 text-white px-2 py-0.5 rounded">
-                  Next Update Planned
-                </span>
-              </div>
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/qr.png"
+                alt="Payment QR Code"
+                className="w-14 h-14 rounded-lg bg-white p-1 border border-zinc-700 object-contain shrink-0"
+              />
             </div>
 
             <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-              Official entry fee payments are accepted via GPay / PhonePe / Paytm / UPI to <strong className="text-white">+91 90543 58668</strong> (<strong className="text-red-400">Juned Rafik Patel</strong>). Confirmations and custom room access are verified directly by Admin Juned via WhatsApp.
+              Official entry fee payments are accepted via GPay / PhonePe / Paytm / UPI to <strong className="text-white">+91 90543 58668</strong> (<strong className="text-red-400">Juned Rafik Patel</strong>). Automatic dynamic pop-up with locked amount and instant UPI intent links launch right after registering your squad!
             </p>
 
             <div className="mt-5 bg-zinc-950 border border-zinc-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="text-gray-400">Payment: <strong className="text-white">+91 90543 58668</strong> (Juned Rafik Patel)</span>
-              <span className="text-red-500 font-bold">WhatsApp: +91 8849596369</span>
+              <span className="text-gray-400">UPI Payee: <strong className="text-white">9054358668@ybl</strong> (Juned Rafik Patel)</span>
+              <span className="text-red-500 font-bold">Support WhatsApp: +91 8849596369</span>
             </div>
           </div>
         </div>

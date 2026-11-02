@@ -6,7 +6,15 @@ import {
   deletePlayerFromTeam,
   updatePlayerInTeam,
   resetAllTeams,
+  updateTeamPaymentStatus,
 } from "@/lib/db";
+import {
+  broadcastTeamRegistered,
+  broadcastTeamDeleted,
+  broadcastPlayerUpdated,
+  broadcastTeamsReset,
+  broadcastTeamPaymentUpdated,
+} from "@/lib/socket-server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -67,6 +75,14 @@ export async function POST(req: NextRequest) {
       player4,
     });
 
+    // Real-time Socket.IO broadcast to all connected clients
+    try {
+      const allTeams = await getTeams();
+      broadcastTeamRegistered(newTeam, allTeams);
+    } catch (socketErr) {
+      console.warn("Socket broadcast error in registerTeam:", socketErr);
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -93,6 +109,11 @@ export async function DELETE(req: NextRequest) {
 
     if (reset === "true") {
       await resetAllTeams();
+      try {
+        broadcastTeamsReset();
+      } catch (socketErr) {
+        console.warn("Socket broadcast error in resetAllTeams:", socketErr);
+      }
       return NextResponse.json(
         { success: true, message: "All teams reset successfully." },
         { headers: { "Cache-Control": "no-store, max-age=0" } }
@@ -109,6 +130,12 @@ export async function DELETE(req: NextRequest) {
       if (!updatedTeam) {
         return NextResponse.json({ success: false, message: "Team not found." }, { status: 404 });
       }
+      try {
+        const allTeams = await getTeams();
+        broadcastPlayerUpdated(updatedTeam, allTeams);
+      } catch (socketErr) {
+        console.warn("Socket broadcast error in deletePlayerFromTeam:", socketErr);
+      }
       return NextResponse.json(
         {
           success: true,
@@ -122,6 +149,12 @@ export async function DELETE(req: NextRequest) {
     // Delete entire team (by teamId and optional slot)
     const slotNum = slot ? Number(slot) : undefined;
     const deleted = await deleteTeam(teamId, slotNum);
+    try {
+      const allTeams = await getTeams();
+      broadcastTeamDeleted(teamId, slotNum, allTeams);
+    } catch (socketErr) {
+      console.warn("Socket broadcast error in deleteTeam:", socketErr);
+    }
 
     return NextResponse.json(
       { success: true, message: "Full team removed and slot released." },
@@ -138,7 +171,26 @@ export async function DELETE(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { teamId, playerKey, playerInfo } = body;
+    const { teamId, playerKey, playerInfo, paymentStatus, paymentUtr, paymentAmount } = body;
+
+    // Support payment status update via PATCH /api/teams
+    if (teamId && paymentStatus) {
+      const updated = await updateTeamPaymentStatus(teamId, paymentStatus, paymentUtr, paymentAmount);
+      if (!updated) {
+        return NextResponse.json({ success: false, message: "Team not found." }, { status: 404 });
+      }
+      try {
+        const allTeams = await getTeams();
+        broadcastTeamPaymentUpdated(updated, allTeams);
+      } catch (socketErr) {
+        console.warn("Socket broadcast error:", socketErr);
+      }
+      return NextResponse.json({
+        success: true,
+        message: `Payment status updated to ${paymentStatus.toUpperCase()}.`,
+        team: updated,
+      });
+    }
 
     if (!teamId || !playerKey || !playerInfo || !playerInfo.name) {
       return NextResponse.json(
@@ -150,6 +202,14 @@ export async function PATCH(req: NextRequest) {
     const updated = await updatePlayerInTeam(teamId, playerKey, playerInfo);
     if (!updated) {
       return NextResponse.json({ success: false, message: "Team not found." }, { status: 404 });
+    }
+
+    // Real-time Socket.IO broadcast to all connected clients
+    try {
+      const allTeams = await getTeams();
+      broadcastPlayerUpdated(updated, allTeams);
+    } catch (socketErr) {
+      console.warn("Socket broadcast error in updatePlayerInTeam:", socketErr);
     }
 
     return NextResponse.json({

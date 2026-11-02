@@ -97,7 +97,7 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter Password (e.g. 2412)"
+                  placeholder="Enter Admin Password"
                   required
                   autoFocus
                   className="w-full bg-slate-50 border-2 border-slate-300 focus:border-blue-600 rounded-xl px-4 py-3.5 text-slate-900 placeholder-slate-400 font-bold focus:outline-none focus:bg-white transition"

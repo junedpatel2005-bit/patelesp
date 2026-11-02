@@ -33,6 +33,7 @@ export default function TeamsPage({
 }: TeamsPageProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingPlayer, setDeletingPlayer] = useState<string | null>(null);
+  const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
@@ -56,6 +57,34 @@ export default function TeamsPage({
   const maxTeams = 12;
   const maxPlayers = 48;
   const isFull = totalTeams >= maxTeams;
+
+  // Toggle Payment Status (Paid / Unpaid)
+  const handleTogglePayment = async (teamId: string, teamName: string, newStatus: "paid" | "unpaid") => {
+    setUpdatingPaymentId(teamId);
+    try {
+      const res = await fetch("/api/teams/payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId, paymentStatus: newStatus }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        onRefresh();
+        setActionMessage(
+          newStatus === "paid"
+            ? `Payment APPROVED for "${teamName}"! Slot is verified.`
+            : `Payment marked as UNPAID for "${teamName}".`
+        );
+        setTimeout(() => setActionMessage(null), 4000);
+      } else {
+        alert(data.message || "Failed to update payment status");
+      }
+    } catch (e) {
+      alert("Error updating payment status. Please try again.");
+    } finally {
+      setUpdatingPaymentId(null);
+    }
+  };
 
   // 1. Delete Full Team
   const handleDeleteFullTeam = async (teamId: string, teamName: string, slotNumber: number) => {
@@ -431,22 +460,68 @@ export default function TeamsPage({
                       #{team.slotNumber}
                     </span>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-lg font-black text-slate-900 uppercase">
                           {team.teamName}
                         </h3>
                         <span className="text-[10px] font-extrabold uppercase bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded">
                           SLOT {team.slotNumber}
                         </span>
+
+                        {/* Paid / Unpaid Status Badge */}
+                        {team.paymentStatus === "paid" ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 rounded-full shadow-sm">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            🟢 PAID (₹{team.paymentAmount || 100})
+                          </span>
+                        ) : team.paymentStatus === "pending" ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full shadow-sm">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                            🟡 PENDING APPROVAL
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-300 px-2.5 py-0.5 rounded-full shadow-sm">
+                            <span className="w-2 h-2 rounded-full bg-red-500" />
+                            🔴 UNPAID
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] text-slate-400 font-mono">
                         Registered: {new Date(team.registeredAt).toLocaleString("en-IN")}
+                        {team.paymentUtr && (
+                          <span className="ml-2 text-emerald-700 font-bold font-mono">
+                            • UTR: {team.paymentUtr}
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
 
                   {/* Actions for Full Team */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Approve / Mark Payment Button */}
+                    {team.paymentStatus === "paid" ? (
+                      <button
+                        onClick={() => handleTogglePayment(team.id, team.teamName, "unpaid")}
+                        disabled={updatingPaymentId === team.id}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-3 py-2 rounded-xl transition cursor-pointer"
+                        title="Revoke and mark as Unpaid"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
+                        <span>{updatingPaymentId === team.id ? "Updating..." : "Mark Unpaid"}</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleTogglePayment(team.id, team.teamName, "paid")}
+                        disabled={updatingPaymentId === team.id}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 rounded-xl transition shadow-sm shadow-emerald-500/20 cursor-pointer"
+                        title="Approve & Mark Entry Fee as Paid"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>{updatingPaymentId === team.id ? "Approving..." : "Approve Payment"}</span>
+                      </button>
+                    )}
+
                     {/* WhatsApp IGL Button */}
                     {team.igl.phone && (
                       <a

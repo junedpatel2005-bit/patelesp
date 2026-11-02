@@ -1,7 +1,20 @@
 "use client";
 
-import React from "react";
-import { Trophy, Medal, Award, DollarSign, Calendar, Clock, Sun } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import {
+  Trophy,
+  Medal,
+  Award,
+  DollarSign,
+  Calendar,
+  Clock,
+  Sun,
+  Users,
+  Copy,
+  Check,
+  MessageCircle,
+  Flame,
+} from "lucide-react";
 import { TournamentData } from "@/lib/types";
 
 interface HeroPrizeBoxesProps {
@@ -14,12 +27,68 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
   const winnerPrize = tournament?.winnerPrize ?? 1000;
   const runnerUpPrize = tournament?.runnerUpPrize ?? 500;
   const thirdPrize = tournament?.thirdPrize ?? 250;
-  const totalPrizePool = Number(winnerPrize) + Number(runnerUpPrize) + Number(thirdPrize);
 
   const tournamentDate = tournament?.tournamentDate || "08 November 2026";
   const tournamentDay = tournament?.tournamentDay || "Sunday";
   const tournamentTime = tournament?.tournamentTime || "09:00 PM IST";
   const entryTime = tournament?.entryTime || "08:45 PM IST";
+
+  const [copiedId, setCopiedId] = useState(false);
+  const [copiedPass, setCopiedPass] = useState(false);
+
+  // Live countdown timer state
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    isLive: boolean;
+  }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isLive: false });
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      try {
+        const cleanDate = tournamentDate.replace(/^[A-Za-z]+,\s*/, "");
+        const cleanTime = tournamentTime.replace(/\s*IST/i, "").trim();
+        const combinedStr = `${cleanDate} ${cleanTime}`;
+        const targetDate = new Date(combinedStr);
+
+        const now = new Date();
+        const diff = targetDate.getTime() - now.getTime();
+
+        if (isNaN(targetDate.getTime()) || diff <= 0) {
+          setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isLive: true });
+          return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        setTimeLeft({ days, hours, minutes, seconds, isLive: false });
+      } catch (e) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isLive: false });
+      }
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+    return () => clearInterval(timer);
+  }, [tournamentDate, tournamentTime]);
+
+  const handleCopy = (text: string, setter: (val: boolean) => void) => {
+    if (!text) return;
+    try {
+      navigator.clipboard.writeText(text);
+      setter(true);
+      setTimeout(() => setter(false), 2000);
+    } catch (e) {}
+  };
+
+  const whatsappLink =
+    tournament?.whatsappGroupLink ||
+    `https://wa.me/${(tournament?.whatsappNumber || "918849596369").replace(/\D/g, "")}`;
 
   return (
     <section className="relative pt-12 pb-16 overflow-hidden bg-gradient-to-b from-black via-zinc-950 to-black">
@@ -48,10 +117,141 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
             Exclusive 12 Squads Arena (48 Players Max). Mobile Only. Register your squad now and compete for the championship!
           </p>
 
-          <div className="mt-4 flex items-center justify-center gap-4 text-xs sm:text-sm font-bold text-gray-300">
-            <span className="text-red-500 font-black">●</span> TOTAL PRIZE POOL: <span className="text-white text-base font-black">₹{totalPrizePool.toLocaleString()}</span>
+          {/* Quick Action CTA Buttons */}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="#register"
+              className="bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase px-5 py-2.5 rounded-xl flex items-center gap-2 transition shadow-lg shadow-red-600/30"
+            >
+              <Users className="w-4 h-4" />
+              Register Squad Now
+            </a>
+
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase px-5 py-2.5 rounded-xl flex items-center gap-2 transition shadow-lg shadow-emerald-600/30"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Join Official WhatsApp Group
+            </a>
           </div>
         </div>
+
+        {/* LIVE COUNTDOWN TIMER */}
+        <div className="mb-8 max-w-2xl mx-auto bg-gradient-to-r from-red-950/80 via-zinc-900/90 to-red-950/80 border-2 border-red-600/60 rounded-2xl p-4 sm:p-5 shadow-[0_0_30px_rgba(239,68,68,0.25)] text-center">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Flame className="w-4 h-4 text-red-500 animate-pulse" />
+            <span className="text-xs font-black uppercase tracking-widest text-red-400">
+              {timeLeft.isLive ? "🔥 TOURNAMENT MATCH IN SESSION" : "MATCH COUNTDOWN TIMER"}
+            </span>
+          </div>
+
+          {timeLeft.isLive ? (
+            <div className="py-2 text-center">
+              <span className="inline-block bg-red-600 text-white font-black text-sm uppercase px-5 py-2 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.6)] animate-pulse">
+                Custom Room Open &amp; Match In Progress
+              </span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-2 sm:gap-4 max-w-md mx-auto">
+              <div className="bg-black/80 border border-red-600/40 rounded-xl p-2 sm:p-3">
+                <span className="text-xl sm:text-3xl font-black text-white font-mono block">
+                  {String(timeLeft.days).padStart(2, "0")}
+                </span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                  Days
+                </span>
+              </div>
+              <div className="bg-black/80 border border-red-600/40 rounded-xl p-2 sm:p-3">
+                <span className="text-xl sm:text-3xl font-black text-white font-mono block">
+                  {String(timeLeft.hours).padStart(2, "0")}
+                </span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                  Hours
+                </span>
+              </div>
+              <div className="bg-black/80 border border-red-600/40 rounded-xl p-2 sm:p-3">
+                <span className="text-xl sm:text-3xl font-black text-white font-mono block">
+                  {String(timeLeft.minutes).padStart(2, "0")}
+                </span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                  Mins
+                </span>
+              </div>
+              <div className="bg-black/80 border border-red-600/40 rounded-xl p-2 sm:p-3">
+                <span className="text-xl sm:text-3xl font-black text-red-500 font-mono block">
+                  {String(timeLeft.seconds).padStart(2, "0")}
+                </span>
+                <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
+                  Secs
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* CUSTOM ROOM ID & PASSWORD LIVE BROADCAST (WHEN ADMIN ENABLES) */}
+        {tournament?.isRoomLive && tournament?.roomId && (
+          <div className="mb-8 max-w-3xl mx-auto bg-gradient-to-r from-emerald-950 via-zinc-950 to-emerald-950 border-2 border-emerald-500 rounded-2xl p-5 shadow-[0_0_35px_rgba(16,185,129,0.35)] animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-4 pb-3 border-b border-emerald-500/30">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
+                <h3 className="text-base sm:text-lg font-black uppercase text-emerald-300 tracking-tight">
+                  🎮 FREE FIRE CUSTOM ROOM CREDENTIALS LIVE!
+                </h3>
+              </div>
+              <span className="bg-emerald-600 text-white font-black text-[10px] uppercase px-3 py-1 rounded-full shadow">
+                Join In-Game Now
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Room ID */}
+              <div className="bg-black/80 border border-emerald-500/50 rounded-xl p-3 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase block">Custom Room ID</span>
+                  <span className="text-xl sm:text-2xl font-black font-mono text-white tracking-widest">
+                    {tournament.roomId}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(tournament.roomId || "", setCopiedId)}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1 transition cursor-pointer"
+                >
+                  {copiedId ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedId ? "Copied!" : "Copy ID"}</span>
+                </button>
+              </div>
+
+              {/* Room Password */}
+              <div className="bg-black/80 border border-emerald-500/50 rounded-xl p-3 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase block">Room Password</span>
+                  <span className="text-xl sm:text-2xl font-black font-mono text-emerald-400 tracking-widest">
+                    {tournament.roomPassword || "None"}
+                  </span>
+                </div>
+                {tournament.roomPassword && (
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(tournament.roomPassword || "", setCopiedPass)}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1 transition cursor-pointer"
+                  >
+                    {copiedPass ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedPass ? "Copied!" : "Copy Pass"}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <p className="text-[11px] text-emerald-200/90 text-center mt-3 font-semibold">
+              ⚠️ Strict Note: Please enter only in your assigned Slot Number (1 to 12). Unregistered squads will be kicked immediately.
+            </p>
+          </div>
+        )}
 
         {/* AFTER HEADER BEFORE BOX: TOURNAMENT DATE, TIME, & DAY (ADMIN CONFIGURABLE) */}
         <div className="mb-10 max-w-4xl mx-auto bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border-2 border-red-600/60 hover:border-red-500 rounded-2xl p-5 sm:p-6 shadow-[0_0_30px_rgba(239,68,68,0.25)] transition">

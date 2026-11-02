@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Shield, Users, CheckCircle, Clock, PlusCircle, ArrowLeft, RefreshCw } from "lucide-react";
 import { TeamRegistration } from "@/lib/types";
+import { getSocket } from "@/lib/socket-client";
 
 export default function ParticipateSlotsList() {
   const [teams, setTeams] = useState<TeamRegistration[]>([]);
@@ -31,12 +32,73 @@ export default function ParticipateSlotsList() {
   useEffect(() => {
     fetchTeams();
 
-    const interval = setInterval(fetchTeams, 4000);
+    const socket = getSocket();
+
+    const handleTeamsUpdate = (payload: any) => {
+      if (Array.isArray(payload?.teams)) {
+        setTeams(payload.teams);
+      } else if (Array.isArray(payload)) {
+        setTeams(payload);
+      }
+    };
+
+    const handleTeamRegistered = (payload: any) => {
+      if (payload?.team) {
+        setTeams((prev) => {
+          if (prev.some((t) => t.id === payload.team.id)) return prev;
+          return [...prev, payload.team];
+        });
+      }
+      if (Array.isArray(payload?.teams)) {
+        setTeams(payload.teams);
+      }
+    };
+
+    const handleTeamDeleted = (payload: any) => {
+      if (payload?.teamId) {
+        setTeams((prev) => prev.filter((t) => t.id !== payload.teamId));
+      }
+      if (Array.isArray(payload?.teams)) {
+        setTeams(payload.teams);
+      }
+    };
+
+    const handleTeamsReset = () => {
+      setTeams([]);
+    };
+
+    const handlePaymentStatus = (payload: any) => {
+      if (payload?.team) {
+        setTeams((prev) =>
+          prev.map((t) => (t.id === payload.team.id ? { ...t, ...payload.team } : t))
+        );
+      }
+      if (Array.isArray(payload?.teams)) {
+        setTeams(payload.teams);
+      }
+    };
+
+    if (socket) {
+      socket.on("teams:updated", handleTeamsUpdate);
+      socket.on("team:registered", handleTeamRegistered);
+      socket.on("team:deleted", handleTeamDeleted);
+      socket.on("team:payment_status", handlePaymentStatus);
+      socket.on("player:updated", handleTeamsUpdate);
+      socket.on("teams:reset", handleTeamsReset);
+    }
+
     const handleFocus = () => fetchTeams();
     window.addEventListener("focus", handleFocus);
 
     return () => {
-      clearInterval(interval);
+      if (socket) {
+        socket.off("teams:updated", handleTeamsUpdate);
+        socket.off("team:registered", handleTeamRegistered);
+        socket.off("team:deleted", handleTeamDeleted);
+        socket.off("team:payment_status", handlePaymentStatus);
+        socket.off("player:updated", handleTeamsUpdate);
+        socket.off("teams:reset", handleTeamsReset);
+      }
       window.removeEventListener("focus", handleFocus);
     };
   }, [fetchTeams]);
@@ -124,6 +186,16 @@ export default function ParticipateSlotsList() {
               </span>
             </div>
           </div>
+
+          {/* UTR Copy Notice */}
+          <div className="mt-4 max-w-xl mx-auto bg-amber-950/60 border border-amber-500/60 rounded-xl p-2.5 flex items-center justify-center gap-2 text-center text-xs text-amber-200">
+            <span className="bg-amber-500 text-black font-black uppercase text-[10px] px-1.5 py-0.5 rounded shrink-0">
+              PAYMENT INFO
+            </span>
+            <span>
+              Please copy your 12-digit UTR number after completing payment to verify your slot!
+            </span>
+          </div>
         </div>
 
         {/* 12 Slots Grid */}
@@ -157,10 +229,22 @@ export default function ParticipateSlotsList() {
                     </span>
 
                     {team ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-400 bg-green-950/60 border border-green-800/60 px-2.5 py-0.5 rounded-full">
-                        <CheckCircle className="w-3 h-3" />
-                        REGISTERED
-                      </span>
+                      team.paymentStatus === "paid" ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-400 bg-emerald-950/80 border border-emerald-500/60 px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+                          <CheckCircle className="w-3 h-3 text-emerald-400" />
+                          PAID &amp; CONFIRMED
+                        </span>
+                      ) : team.paymentStatus === "pending" ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black text-amber-400 bg-amber-950/80 border border-amber-500/60 px-2.5 py-0.5 rounded-full animate-pulse">
+                          <Clock className="w-3 h-3 text-amber-400" />
+                          PAYMENT PENDING REVIEW
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-yellow-400 bg-yellow-950/60 border border-yellow-800/60 px-2.5 py-0.5 rounded-full">
+                          <CheckCircle className="w-3 h-3" />
+                          REGISTERED (UNPAID)
+                        </span>
+                      )
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-zinc-900 px-2.5 py-0.5 rounded-full">
                         <Clock className="w-3 h-3" />

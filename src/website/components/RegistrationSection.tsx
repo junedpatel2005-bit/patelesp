@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Users, Phone, UserCheck, ShieldCheck, AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Users, Phone, UserCheck, ShieldCheck, AlertTriangle, ArrowRight, CheckCircle2, Trash2 } from "lucide-react";
 import { TeamRegistration } from "@/lib/types";
+import PaymentModal from "./PaymentModal";
 
 interface RegistrationSectionProps {
   teamsCount: number;
@@ -39,8 +40,53 @@ export default function RegistrationSection({
   const [p4Uid, setP4Uid] = useState("");
 
   const [loading, setLoading] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successTeam, setSuccessTeam] = useState<TeamRegistration | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+
+  const resetAllFormFields = () => {
+    setTeamName("");
+    setIglName("");
+    setIglUid("");
+    setIglPhone("");
+    setP2Name("");
+    setP2Uid("");
+    setP3Name("");
+    setP3Uid("");
+    setP4Name("");
+    setP4Uid("");
+  };
+
+  const handleCancelRegistration = async () => {
+    if (!successTeam) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to cancel the registration for squad "${successTeam.teamName}"? Slot #${successTeam.slotNumber} will be released and opened for other teams immediately.`
+    );
+    if (!confirmed) return;
+
+    setCancelling(true);
+    try {
+      const res = await fetch(`/api/teams?teamId=${successTeam.id}&slot=${successTeam.slotNumber}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(`Slot #${successTeam.slotNumber} has been successfully cancelled and released.`);
+        setSuccessTeam(null);
+        setShowPaymentModal(false);
+        resetAllFormFields();
+        setError(null);
+      } else {
+        alert(data.message || "Failed to cancel registration.");
+      }
+    } catch (err: any) {
+      alert("Error cancelling registration. Please try again.");
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,8 +105,9 @@ export default function RegistrationSection({
       setError("Please enter Player 1 (IGL) Name.");
       return;
     }
-    if (!iglPhone.trim() || iglPhone.trim().length < 10) {
-      setError("Please enter a valid 10-digit WhatsApp/Phone Number for the IGL.");
+    const cleanPhone = iglPhone.replace(/\D/g, "");
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      setError("Please enter a valid 10-digit WhatsApp/Phone Number for the IGL (+91).");
       return;
     }
     if (!p2Name.trim() || !p3Name.trim() || !p4Name.trim()) {
@@ -79,7 +126,7 @@ export default function RegistrationSection({
           igl: {
             name: iglName,
             uid: iglUid,
-            phone: iglPhone,
+            phone: `+91${cleanPhone}`,
           },
           player2: {
             name: p2Name,
@@ -102,6 +149,7 @@ export default function RegistrationSection({
       }
 
       setSuccessTeam(data.team);
+      setShowPaymentModal(true);
       onRegistered(data.team);
 
       // Reset form
@@ -231,9 +279,28 @@ export default function RegistrationSection({
                       <span className="text-gray-300">GPay / PhonePe / Paytm / UPI</span>
                     </div>
                   </div>
+
+                  {/* UTR Copy reminder */}
+                  <div className="mt-3 bg-amber-950/70 border border-amber-500/80 rounded-lg p-2.5 flex items-start gap-2">
+                    <span className="text-xs bg-amber-500 text-black font-black uppercase px-1.5 py-0.5 rounded shrink-0">
+                      UTR
+                    </span>
+                    <p className="text-xs font-bold text-amber-200">
+                      ⚠️ <strong>Please copy your UTR / UPI Ref number</strong> when you complete payment in your UPI app, and paste it in the payment window!
+                    </p>
+                  </div>
                 </div>
 
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowPaymentModal(true)}
+                    className="text-xs uppercase font-black bg-red-600 hover:bg-red-500 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition shadow-lg shadow-red-600/30 cursor-pointer"
+                  >
+                    <span>⚡ Pay ₹{tournament?.squadPrice ?? 100} &amp; View QR Code</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+
                   <a
                     href={`https://wa.me/918849596369?text=${encodeURIComponent(
                       `Hello Juned, I have registered squad "${successTeam.teamName}" for Slot #${successTeam.slotNumber}. Here is my payment screenshot for the entry fee.`
@@ -252,6 +319,32 @@ export default function RegistrationSection({
                   >
                     View Slot in Participate List
                   </Link>
+
+                  {tournament?.whatsappGroupLink && (
+                    <a
+                      href={tournament.whatsappGroupLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs uppercase font-extrabold bg-emerald-700 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-1.5 transition shadow-sm"
+                    >
+                      <span>Join WhatsApp Group</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+
+                  {/* Cancel Registration Button (when payment not done) */}
+                  {successTeam.paymentStatus !== "paid" && (
+                    <button
+                      type="button"
+                      onClick={handleCancelRegistration}
+                      disabled={cancelling}
+                      className="text-xs uppercase font-extrabold bg-zinc-900 hover:bg-red-950/80 text-red-400 hover:text-red-300 border border-zinc-800 hover:border-red-600 px-4 py-2.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer"
+                      title="Cancel squad registration and release this slot"
+                    >
+                      <Trash2 className={`w-3.5 h-3.5 ${cancelling ? "animate-spin" : "text-red-500"}`} />
+                      <span>{cancelling ? "Cancelling Slot..." : "Cancel Registration"}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -335,20 +428,36 @@ export default function RegistrationSection({
                     />
                   </div>
 
-                  {/* IGL Phone Number */}
+                  {/* IGL Phone Number with +91 prefilled and 10 digits restriction */}
                   <div>
-                    <label className="block text-[11px] font-bold text-red-400 mb-1 flex items-center gap-1">
-                      <Phone className="w-3 h-3 text-red-500" />
-                      IGL Phone / WhatsApp <span className="text-red-500">*</span>
+                    <label className="block text-[11px] font-bold text-red-400 mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Phone className="w-3 h-3 text-red-500" />
+                        IGL Phone / WhatsApp <span className="text-red-500">*</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-gray-400">
+                        {iglPhone.length}/10 digits
+                      </span>
                     </label>
-                    <input
-                      type="tel"
-                      value={iglPhone}
-                      onChange={(e) => setIglPhone(e.target.value)}
-                      placeholder="WhatsApp Mobile No."
-                      required
-                      className="w-full bg-zinc-950 border-2 border-red-900/60 focus:border-red-500 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none"
-                    />
+                    <div className="flex rounded-lg overflow-hidden border-2 border-red-900/60 focus-within:border-red-500 transition">
+                      <span className="inline-flex items-center px-3 bg-zinc-900 text-gray-200 font-mono font-bold text-sm border-r border-zinc-800 select-none">
+                        +91
+                      </span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={10}
+                        value={iglPhone}
+                        onChange={(e) => {
+                          const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          setIglPhone(digitsOnly);
+                        }}
+                        placeholder="10-digit number"
+                        required
+                        className="flex-1 bg-zinc-950 px-3 py-2 text-white text-sm font-mono placeholder-gray-600 focus:outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-2">
@@ -513,6 +622,20 @@ export default function RegistrationSection({
                   </div>
                 </div>
               </div>
+              <div className="mt-3 bg-amber-950/70 border-2 border-amber-500/80 rounded-xl p-3 flex items-start gap-3 shadow-md">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500 flex items-center justify-center text-amber-400 shrink-0 font-black text-xs">
+                  UTR
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-500 text-black px-2 py-0.5 rounded font-mono inline-block mb-1">
+                    IMPORTANT INSTRUCTION
+                  </span>
+                  <p className="text-xs sm:text-sm font-bold text-amber-200 leading-snug">
+                    ⚠️ Please copy your 12-digit UPI UTR / Ref Number when you complete payment in your UPI app (Google Pay, PhonePe, Paytm), and paste it in the payment confirmation popup to verify your squad slot!
+                  </p>
+                </div>
+              </div>
+
               <div className="mt-3 bg-red-950/60 border border-red-800/60 rounded-lg p-2.5 flex items-center gap-2">
                 <span className="text-[10px] bg-red-600 text-white font-black uppercase px-2 py-0.5 rounded shrink-0">
                   MANDATORY
@@ -523,7 +646,7 @@ export default function RegistrationSection({
               </div>
 
               <p className="text-[11px] text-gray-400 mt-2">
-                * After submitting your squad registration below, please send the payment screenshot to Juned on WhatsApp to activate your slot.
+                * After submitting your squad registration below, the payment QR &amp; app links will open. Please copy and enter your UTR number or send the screenshot on WhatsApp to activate your slot.
               </p>
             </div>
 
@@ -550,6 +673,18 @@ export default function RegistrationSection({
           </form>
         )}
       </div>
+
+      {/* Payment Pop-up Modal with Dynamic & Official QR Code + Mobile UPI Intent Redirects */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        team={successTeam}
+        tournament={tournament}
+        onPaymentSubmitted={(updated) => {
+          setSuccessTeam(updated);
+        }}
+        onCancelRegistration={handleCancelRegistration}
+      />
     </section>
   );
 }

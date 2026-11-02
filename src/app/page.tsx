@@ -7,6 +7,7 @@ import RegistrationSection from "@/website/components/RegistrationSection";
 import AboutSection from "@/website/components/AboutSection";
 import FreeFireRules from "@/website/components/FreeFireRules";
 import { TournamentData, TeamRegistration } from "@/lib/types";
+import { getSocket } from "@/lib/socket-client";
 
 export default function HomePage() {
   const [tournament, setTournament] = useState<TournamentData | null>(null);
@@ -45,10 +46,62 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    // Initial fetch
     fetchData();
 
-    // Live auto-refresh every 2 seconds to reflect admin price changes in real-time
-    const interval = setInterval(fetchData, 2000);
+    // Setup real-time Socket.IO subscriptions
+    const socket = getSocket();
+
+    const handleTournamentUpdate = (payload: any) => {
+      if (payload?.tournament) {
+        setTournament(payload.tournament);
+      } else if (payload && typeof payload === "object" && "squadPrice" in payload) {
+        setTournament(payload);
+      }
+    };
+
+    const handleTeamsUpdate = (payload: any) => {
+      if (Array.isArray(payload?.teams)) {
+        setTeams(payload.teams);
+      } else if (Array.isArray(payload)) {
+        setTeams(payload);
+      }
+    };
+
+    const handleTeamRegistered = (payload: any) => {
+      if (payload?.team) {
+        setTeams((prev) => {
+          if (prev.some((t) => t.id === payload.team.id)) return prev;
+          return [...prev, payload.team];
+        });
+      }
+      if (Array.isArray(payload?.teams)) {
+        setTeams(payload.teams);
+      }
+    };
+
+    const handleTeamDeleted = (payload: any) => {
+      if (payload?.teamId) {
+        setTeams((prev) => prev.filter((t) => t.id !== payload.teamId));
+      }
+      if (Array.isArray(payload?.teams)) {
+        setTeams(payload.teams);
+      }
+    };
+
+    const handleTeamsReset = () => {
+      setTeams([]);
+    };
+
+    if (socket) {
+      socket.on("tournament:updated", handleTournamentUpdate);
+      socket.on("prices:updated", handleTournamentUpdate);
+      socket.on("teams:updated", handleTeamsUpdate);
+      socket.on("team:registered", handleTeamRegistered);
+      socket.on("team:deleted", handleTeamDeleted);
+      socket.on("player:updated", handleTeamsUpdate);
+      socket.on("teams:reset", handleTeamsReset);
+    }
 
     // Refresh immediately when tab gains focus
     const handleVisibility = () => {
@@ -57,22 +110,21 @@ export default function HomePage() {
       }
     };
 
-    // Instant cross-tab sync when admin saves prices
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === "patelesp_price_sync") {
-        fetchData();
-      }
-    };
-
     window.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("focus", fetchData);
-    window.addEventListener("storage", handleStorage);
 
     return () => {
-      clearInterval(interval);
+      if (socket) {
+        socket.off("tournament:updated", handleTournamentUpdate);
+        socket.off("prices:updated", handleTournamentUpdate);
+        socket.off("teams:updated", handleTeamsUpdate);
+        socket.off("team:registered", handleTeamRegistered);
+        socket.off("team:deleted", handleTeamDeleted);
+        socket.off("player:updated", handleTeamsUpdate);
+        socket.off("teams:reset", handleTeamsReset);
+      }
       window.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("focus", fetchData);
-      window.removeEventListener("storage", handleStorage);
     };
   }, [fetchData]);
 

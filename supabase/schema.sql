@@ -152,3 +152,15 @@ INSERT INTO public.tournaments (
   ),
   '+91 98765 43210'
 ) ON CONFLICT (id) DO NOTHING;
+
+
+-- ==============================================================================
+-- 5. MIGRATIONS FOR PAYMENT & UPI EXPANSIONS
+-- Run these safe idempotent statements to add payment tracking columns
+-- ==============================================================================
+ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'unpaid';
+ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS entry_fee_paid INTEGER NOT NULL DEFAULT 100;
+ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS utr_number TEXT DEFAULT '';
+ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS payment_time TIMESTAMPTZ;
+ALTER TABLE public.tournaments ADD COLUMN IF NOT EXISTS upi_id TEXT DEFAULT '9054358668@ybl';
+ALTER TABLE public.tournaments ADD COLUMN IF NOT EXISTS upi_name TEXT DEFAULT 'Juned Rafik Patel';

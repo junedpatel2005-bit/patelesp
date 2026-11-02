@@ -1,9 +1,13 @@
+export type PaymentStatus = "paid" | "unpaid" | "pending";
+
 export interface TournamentData {
   name: string;
   developer: string;
   whatsappNumber: string;
+  whatsappGroupLink?: string;
   paymentNumber: string;
   paymentName: string;
+  upiId?: string;
   tournamentDate: string;
   tournamentDay: string;
   tournamentTime: string;
@@ -16,6 +20,9 @@ export interface TournamentData {
   maxTeams: number;
   maxPlayers: number;
   isRegistrationOpen: boolean;
+  roomId?: string;
+  roomPassword?: string;
+  isRoomLive?: boolean;
   updatedAt: string;
 }
 
@@ -59,6 +66,11 @@ export interface TeamRegistration {
     uid?: string;
   };
   registeredAt: string;
+  paymentStatus: PaymentStatus;
+  paymentAmount: number;
+  paymentUtr?: string;
+  paymentTime?: string;
+  paymentMethod?: string;
 }
 
 export interface DatabaseSchema {

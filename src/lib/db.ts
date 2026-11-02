@@ -10,8 +10,10 @@ const defaultTournament: TournamentData = {
   name: "PATELESP",
   developer: "Juned",
   whatsappNumber: "+918849596369",
+  whatsappGroupLink: "https://chat.whatsapp.com/invite",
   paymentNumber: "+919054358668",
   paymentName: "Juned Rafik Patel",
+  upiId: "9054358668@ybl",
   tournamentDate: "08 November 2026",
   tournamentDay: "Sunday",
   tournamentTime: "09:00 PM IST",
@@ -24,6 +26,9 @@ const defaultTournament: TournamentData = {
   maxTeams: 12,
   maxPlayers: 48,
   isRegistrationOpen: true,
+  roomId: "",
+  roomPassword: "",
+  isRoomLive: false,
   updatedAt: new Date().toISOString(),
 };
 
@@ -114,6 +119,7 @@ export async function getTournament(): Promise<TournamentData> {
           name: data.title || local.tournament.name || "PATELESP",
           developer: "Juned",
           whatsappNumber: data.contact_number || local.tournament.whatsappNumber || "+918849596369",
+          whatsappGroupLink: rulesObj.whatsappGroupLink || local.tournament.whatsappGroupLink || "https://chat.whatsapp.com/invite",
           paymentNumber: data.upi_id || local.tournament.paymentNumber || "+919054358668",
           paymentName: data.upi_name || local.tournament.paymentName || "Juned Rafik Patel",
           tournamentDate: data.match_date || local.tournament.tournamentDate || "08 November 2026",
@@ -133,6 +139,9 @@ export async function getTournament(): Promise<TournamentData> {
           maxTeams: 12,
           maxPlayers: 48,
           isRegistrationOpen: true,
+          roomId: rulesObj.roomId || local.tournament.roomId || "",
+          roomPassword: rulesObj.roomPassword || local.tournament.roomPassword || "",
+          isRoomLive: rulesObj.isRoomLive !== undefined ? rulesObj.isRoomLive : local.tournament.isRoomLive || false,
           updatedAt: data.updated_at || new Date().toISOString(),
         };
 
@@ -222,6 +231,10 @@ export async function updateTournamentSettings(
             : local.tournament.hidePointsTable !== undefined
             ? local.tournament.hidePointsTable
             : true,
+        whatsappGroupLink: updates.whatsappGroupLink ?? local.tournament.whatsappGroupLink,
+        roomId: updates.roomId ?? local.tournament.roomId,
+        roomPassword: updates.roomPassword ?? local.tournament.roomPassword,
+        isRoomLive: updates.isRoomLive !== undefined ? updates.isRoomLive : local.tournament.isRoomLive,
       };
 
       const { data: updatedRows, error } = await supabase
@@ -293,7 +306,14 @@ export async function updateTournamentPrizes(
 
 export async function getPriceHistory(): Promise<PriceHistoryRecord[]> {
   const local = ensureLocalFile();
-  return local.priceHistory;
+  return Array.isArray(local.priceHistory) ? local.priceHistory : [];
+}
+
+export async function clearPriceHistory(): Promise<boolean> {
+  const local = ensureLocalFile();
+  local.priceHistory = [];
+  persistLocalFile(local);
+  return true;
 }
 
 export async function getTeams(): Promise<TeamRegistration[]> {
@@ -337,6 +357,14 @@ export async function getTeams(): Promise<TeamRegistration[]> {
 
         const cloudTeams: TeamRegistration[] = data.map((row: any) => {
           const players = Array.isArray(row.players) ? row.players : [];
+          const rawStatus = (row.payment_status || "").toLowerCase();
+          const pStatus: "paid" | "unpaid" | "pending" =
+            rawStatus === "verified" || rawStatus === "paid" || rawStatus === "approved"
+              ? "paid"
+              : rawStatus === "pending"
+              ? "pending"
+              : "unpaid";
+
           return {
             id: row.id || `TEAM-${row.slot_number}`,
             slotNumber: row.slot_number,
@@ -359,6 +387,11 @@ export async function getTeams(): Promise<TeamRegistration[]> {
               uid: players[3]?.uid || "",
             },
             registeredAt: row.created_at || new Date().toISOString(),
+            paymentStatus: pStatus,
+            paymentAmount: Number(row.entry_fee_paid || local.tournament.squadPrice || 100),
+            paymentUtr: row.utr_number && !row.utr_number.startsWith("DIRECT-") ? row.utr_number : "",
+            paymentTime: row.created_at,
+            paymentMethod: "UPI",
           };
         });
 
@@ -371,7 +404,12 @@ export async function getTeams(): Promise<TeamRegistration[]> {
     }
   }
 
-  return local.teams;
+  return local.teams.map((t) => ({
+    ...t,
+    paymentStatus: t.paymentStatus || "unpaid",
+    paymentAmount: t.paymentAmount ?? local.tournament.squadPrice ?? 100,
+    paymentUtr: t.paymentUtr || "",
+  }));
 }
 
 export async function registerTeam(data: {
@@ -380,6 +418,8 @@ export async function registerTeam(data: {
   player2: { name: string; uid?: string };
   player3: { name: string; uid?: string };
   player4: { name: string; uid?: string };
+  paymentStatus?: "paid" | "unpaid" | "pending";
+  paymentUtr?: string;
 }): Promise<TeamRegistration> {
   const currentTeams = await getTeams();
 
@@ -399,6 +439,9 @@ export async function registerTeam(data: {
 
   const teamId = `PTL-${Date.now().toString().slice(-4)}`;
   const now = new Date().toISOString();
+  const local = ensureLocalFile();
+  const entryFee = Number(local.tournament.squadPrice || 100);
+  const initialPaymentStatus = data.paymentStatus || "unpaid";
 
   const newTeam: TeamRegistration = {
     id: teamId,
@@ -422,6 +465,11 @@ export async function registerTeam(data: {
       uid: data.player4.uid?.trim() || "",
     },
     registeredAt: now,
+    paymentStatus: initialPaymentStatus,
+    paymentAmount: entryFee,
+    paymentUtr: data.paymentUtr?.trim() || "",
+    paymentTime: initialPaymentStatus === "paid" ? now : undefined,
+    paymentMethod: "UPI",
   };
 
   // Sync to Supabase
@@ -432,10 +480,10 @@ export async function registerTeam(data: {
         team_name: newTeam.teamName,
         captain_phone: newTeam.igl.phone,
         slot_number: assignedSlot,
-        utr_number: `DIRECT-${Date.now()}`,
-        entry_fee_paid: 100,
-        payment_status: "verified",
-        status: "approved",
+        utr_number: newTeam.paymentUtr || `DIRECT-${Date.now()}`,
+        entry_fee_paid: entryFee,
+        payment_status: initialPaymentStatus === "paid" ? "verified" : initialPaymentStatus,
+        status: initialPaymentStatus === "paid" ? "approved" : "pending",
         players: [
           { name: newTeam.igl.name, uid: newTeam.igl.uid, isCaptain: true },
           { name: newTeam.player2.name, uid: newTeam.player2.uid },
@@ -450,7 +498,6 @@ export async function registerTeam(data: {
   }
 
   // Sync to local
-  const local = ensureLocalFile();
   local.teams.push(newTeam);
   local.teams.sort((a, b) => a.slotNumber - b.slotNumber);
   persistLocalFile(local);
@@ -613,4 +660,51 @@ export async function resetAllTeams(): Promise<boolean> {
   local.teams = [];
   persistLocalFile(local);
   return true;
+}
+
+export async function updateTeamPaymentStatus(
+  teamId: string,
+  paymentStatus: "paid" | "unpaid" | "pending",
+  paymentUtr?: string,
+  paymentAmount?: number
+): Promise<TeamRegistration | null> {
+  const local = ensureLocalFile();
+  const index = local.teams.findIndex((t) => t.id === teamId);
+  if (index === -1) {
+    return null;
+  }
+
+  const team = local.teams[index];
+  team.paymentStatus = paymentStatus;
+  if (paymentUtr !== undefined) {
+    team.paymentUtr = paymentUtr.trim();
+  }
+  if (paymentAmount !== undefined) {
+    team.paymentAmount = Number(paymentAmount);
+  } else if (!team.paymentAmount) {
+    team.paymentAmount = Number(local.tournament.squadPrice || 100);
+  }
+  team.paymentTime = new Date().toISOString();
+  local.teams[index] = team;
+  persistLocalFile(local);
+
+  // Sync to Supabase Cloud Database
+  if (isSupabaseReady() && supabase) {
+    try {
+      const dbStatus = paymentStatus === "paid" ? "verified" : paymentStatus;
+      await supabase
+        .from("teams")
+        .update({
+          payment_status: dbStatus,
+          status: paymentStatus === "paid" ? "approved" : "pending",
+          utr_number: team.paymentUtr || `DIRECT-${Date.now()}`,
+          entry_fee_paid: team.paymentAmount || local.tournament.squadPrice,
+        })
+        .eq("id", teamId);
+    } catch (e) {
+      console.error("Supabase updateTeamPaymentStatus error:", e);
+    }
+  }
+
+  return team;
 }

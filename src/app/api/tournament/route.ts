@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTournament, updateTournamentSettings } from "@/lib/db";
+import { broadcastTournamentUpdated } from "@/lib/socket-server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -33,6 +34,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     const result = await updateTournamentSettings(body);
+
+    // Real-time Socket.IO broadcast to all connected clients
+    try {
+      broadcastTournamentUpdated(result.tournament, result.history);
+    } catch (socketErr) {
+      console.warn("Socket broadcast error in tournament route:", socketErr);
+    }
 
     return NextResponse.json(
       {

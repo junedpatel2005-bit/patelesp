@@ -10,6 +10,7 @@ interface OverviewPageProps {
   teams: TeamRegistration[];
   onNavigateToPrices: () => void;
   onNavigateToTeams: () => void;
+  onCompleteTournament?: () => void;
 }
 
 export default function OverviewPage({
@@ -17,6 +18,7 @@ export default function OverviewPage({
   teams,
   onNavigateToPrices,
   onNavigateToTeams,
+  onCompleteTournament,
 }: OverviewPageProps) {
   const registeredTeams = teams.length;
   const maxTeams = tournament?.maxTeams ?? 12;
@@ -29,6 +31,8 @@ export default function OverviewPage({
   const runnerUpPrize = tournament?.runnerUpPrize ?? 500;
   const thirdPrize = tournament?.thirdPrize ?? 250;
   const totalPrizePool = Number(winnerPrize) + Number(runnerUpPrize) + Number(thirdPrize);
+  const paidTeams = teams.filter((t) => t.paymentStatus === "paid").length;
+  const totalCollected = paidTeams * squadPrice;
 
   return (
     <div className="space-y-8">
@@ -47,18 +51,31 @@ export default function OverviewPage({
           </p>
         </div>
 
-        <div className="mt-6 pt-6 border-t border-blue-500/40 flex flex-wrap items-center gap-4 text-xs font-medium text-blue-100">
-          <span>
-            Platform: <strong className="text-white">Free Fire Mobile</strong>
-          </span>
-          <span>•</span>
-          <span>
-            Developer: <strong className="text-white">Juned</strong>
-          </span>
-          <span>•</span>
-          <span>
-            Support WhatsApp: <strong className="text-white">+91 8849596369</strong>
-          </span>
+        <div className="mt-6 pt-6 border-t border-blue-500/40 flex flex-wrap items-center justify-between gap-4 text-xs font-medium text-blue-100">
+          <div className="flex flex-wrap items-center gap-4">
+            <span>
+              Platform: <strong className="text-white">Free Fire Mobile</strong>
+            </span>
+            <span>•</span>
+            <span>
+              Developer: <strong className="text-white">Juned</strong>
+            </span>
+            <span>•</span>
+            <span>
+              Support: <strong className="text-white">+91 8849596369</strong>
+            </span>
+          </div>
+
+          {onCompleteTournament && (
+            <button
+              onClick={onCompleteTournament}
+              className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase px-4 py-2 rounded-xl transition shadow-md shadow-amber-500/20 cursor-pointer"
+              title="Finish match and reset all slots & payments for the next season"
+            >
+              <Trophy className="w-4 h-4 text-amber-900" />
+              Tournament Completed &amp; Reset All
+            </button>
+          )}
         </div>
       </div>
 
@@ -149,8 +166,10 @@ export default function OverviewPage({
             ₹{squadPrice.toLocaleString()}
           </div>
           <div className="mt-3 flex items-center justify-between text-xs font-medium">
-            <span className="text-slate-500">Per Squad (4 Players)</span>
-            <span className="font-bold text-blue-700">Set Price &rarr;</span>
+            <span className="text-slate-500">Collected</span>
+            <span className="font-bold text-emerald-600">
+              ₹{totalCollected.toLocaleString()} ({paidTeams}/{registeredTeams} Paid)
+            </span>
           </div>
         </div>
       </div>

@@ -17,8 +17,12 @@ import {
   CreditCard,
   EyeOff,
   Eye,
+  Trash2,
+  Radio,
+  MessageCircle,
 } from "lucide-react";
 import { TournamentData, PriceHistoryRecord } from "@/lib/types";
+import { getSocket } from "@/lib/socket-client";
 
 interface PricesPageProps {
   tournament: TournamentData | null;
@@ -58,6 +62,13 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
   // Payment details state
   const [paymentNumber, setPaymentNumber] = useState<string>("+919054358668");
   const [paymentName, setPaymentName] = useState<string>("Juned Rafik Patel");
+  const [upiId, setUpiId] = useState<string>("9054358668@ybl");
+
+  // WhatsApp Group link & Room Credentials state
+  const [whatsappGroupLink, setWhatsappGroupLink] = useState<string>("https://chat.whatsapp.com/invite");
+  const [roomId, setRoomId] = useState<string>("");
+  const [roomPassword, setRoomPassword] = useState<string>("");
+  const [isRoomLive, setIsRoomLive] = useState<boolean>(false);
 
   // Points table visibility toggle
   const [hidePointsTable, setHidePointsTable] = useState<boolean>(true);
@@ -69,6 +80,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
   // Price history state
   const [history, setHistory] = useState<PriceHistoryRecord[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [clearingHistory, setClearingHistory] = useState(false);
 
   // Sync inputs when tournament data loads or updates
   useEffect(() => {
@@ -83,6 +95,11 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
       setEntryTime(tournament.entryTime || "08:45 PM IST");
       setPaymentNumber(tournament.paymentNumber || "+919054358668");
       setPaymentName(tournament.paymentName || "Juned Rafik Patel");
+      setUpiId(tournament.upiId || "9054358668@ybl");
+      setWhatsappGroupLink(tournament.whatsappGroupLink || "https://chat.whatsapp.com/invite");
+      setRoomId(tournament.roomId || "");
+      setRoomPassword(tournament.roomPassword || "");
+      setIsRoomLive(tournament.isRoomLive ?? false);
       setHidePointsTable(tournament.hidePointsTable !== undefined ? tournament.hidePointsTable : true);
 
       if (tournament.tournamentDate) {
@@ -150,7 +167,13 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
       const res = await fetch(`/api/price-history?_t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
       if (data.success && Array.isArray(data.history)) {
-        setHistory(data.history);
+        const seen = new Set();
+        const uniqueHistory = data.history.filter((h: any) => {
+          if (!h?.id || seen.has(h.id)) return false;
+          seen.add(h.id);
+          return true;
+        });
+        setHistory(uniqueHistory);
       }
     } catch (err) {
       console.error("Failed to load price history:", err);
@@ -159,8 +182,53 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
     }
   };
 
+  const handleClearHistory = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to CLEAR ALL price change history records? This cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    setClearingHistory(true);
+    try {
+      const res = await fetch("/api/price-history", { method: "DELETE" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setHistory([]);
+      } else {
+        alert(data.message || "Failed to clear history.");
+      }
+    } catch (e) {
+      alert("Error clearing history.");
+    } finally {
+      setClearingHistory(false);
+    }
+  };
+
   useEffect(() => {
     fetchHistory();
+
+    const socket = getSocket();
+    const handleTournamentUpdate = (payload: any) => {
+      if (payload?.historyRecord) {
+        setHistory((prev) => {
+          if (prev.some((h) => h.id === payload.historyRecord.id)) return prev;
+          return [payload.historyRecord, ...prev];
+        });
+      }
+    };
+
+    if (socket) {
+      socket.on("tournament:updated", handleTournamentUpdate);
+    }
+
+    return () => {
+      if (socket) {
+        socket.off("tournament:updated", handleTournamentUpdate);
+      }
+    };
   }, []);
 
   const handleSaveAll = async (e?: any) => {
@@ -194,6 +262,11 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
           entryTime: entryTime.trim(),
           paymentNumber: paymentNumber.trim(),
           paymentName: paymentName.trim(),
+          upiId: upiId.trim(),
+          whatsappGroupLink: whatsappGroupLink.trim(),
+          roomId: roomId.trim(),
+          roomPassword: roomPassword.trim(),
+          isRoomLive,
           hidePointsTable,
           note: note.trim() || "Prizes & Tournament settings modified from Admin Panel",
         }),
@@ -206,7 +279,10 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
 
       onTournamentUpdated(data.tournament);
       if (data.historyRecord) {
-        setHistory((prev) => [data.historyRecord, ...prev]);
+        setHistory((prev) => {
+          if (prev.some((h) => h.id === data.historyRecord.id)) return prev;
+          return [data.historyRecord, ...prev];
+        });
       }
       try {
         localStorage.setItem("patelesp_price_sync", Date.now().toString());
@@ -234,6 +310,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
       entryTime !== (tournament.entryTime || "08:45 PM IST") ||
       paymentNumber !== (tournament.paymentNumber || "+919054358668") ||
       paymentName !== (tournament.paymentName || "Juned Rafik Patel") ||
+      upiId !== (tournament.upiId || "9054358668@ybl") ||
       hidePointsTable !== (tournament.hidePointsTable !== undefined ? tournament.hidePointsTable : true));
 
   const calculatedTotal =
@@ -652,7 +729,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
               3. Official Payment Credentials (UPI / GPay / PhonePe)
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {/* Payment Mobile Number */}
               <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
@@ -689,6 +766,24 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
                 </p>
               </div>
 
+              {/* Payee UPI ID */}
+              <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  Official UPI ID / VPA
+                </label>
+                <input
+                  type="text"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  placeholder="9054358668@ybl"
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  Used for dynamic QR generation &amp; deep linking
+                </p>
+              </div>
+
               {/* Points Table Toggle */}
               <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4 flex flex-col justify-between">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
@@ -720,6 +815,95 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2">
                   Currently {hidePointsTable ? "HIDDEN from website rules" : "VISIBLE on website rules"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 4: TOURNAMENT DAY ROOM CREDENTIALS & WHATSAPP GROUP */}
+          <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 flex-wrap gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                  <Radio className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 uppercase">
+                    4. Custom Room Credentials &amp; WhatsApp Community Group
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Broadcast Free Fire Custom Room ID &amp; Password live to players before match start
+                  </p>
+                </div>
+              </div>
+
+              {/* Live Broadcast Toggle */}
+              <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${isRoomLive ? "bg-emerald-500 animate-ping" : "bg-slate-400"}`} />
+                <button
+                  type="button"
+                  onClick={() => setIsRoomLive(!isRoomLive)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase transition cursor-pointer ${
+                    isRoomLive
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                  }`}
+                >
+                  {isRoomLive ? "🟢 Room Broadcast: LIVE ON WEBSITE" : "⚪ Room Broadcast: HIDDEN"}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Custom Room ID */}
+              <div className="bg-white border-2 border-slate-200 focus-within:border-emerald-600 rounded-xl p-4 transition">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Free Fire Custom Room ID
+                </label>
+                <input
+                  type="text"
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value)}
+                  placeholder="e.g. 8492014"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-black font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Generated in Free Fire app 15 mins prior to match
+                </p>
+              </div>
+
+              {/* Room Password */}
+              <div className="bg-white border-2 border-slate-200 focus-within:border-emerald-600 rounded-xl p-4 transition">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Custom Room Password
+                </label>
+                <input
+                  type="text"
+                  value={roomPassword}
+                  onChange={(e) => setRoomPassword(e.target.value)}
+                  placeholder="e.g. 2412"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-black font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Keep simple for players to type quickly
+                </p>
+              </div>
+
+              {/* Official WhatsApp Group Link */}
+              <div className="bg-white border-2 border-slate-200 focus-within:border-emerald-600 rounded-xl p-4 transition">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1">
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                  Official WhatsApp Group Link
+                </label>
+                <input
+                  type="url"
+                  value={whatsappGroupLink}
+                  onChange={(e) => setWhatsappGroupLink(e.target.value)}
+                  placeholder="https://chat.whatsapp.com/invite/..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 truncate"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Players can join the tournament WhatsApp group with 1 tap
                 </p>
               </div>
             </div>
@@ -786,13 +970,29 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
             </div>
           </div>
 
-          <button
-            onClick={fetchHistory}
-            className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Refresh History
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={fetchHistory}
+              disabled={loadingHistory}
+              className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingHistory ? "animate-spin" : ""}`} />
+              Refresh History
+            </button>
+            {history.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearHistory}
+                disabled={clearingHistory}
+                className="text-xs font-bold text-red-600 hover:text-red-800 flex items-center gap-1.5 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 transition cursor-pointer"
+                title="Permanently clear all price logs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{clearingHistory ? "Clearing..." : "Clear All History"}</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {loadingHistory ? (
@@ -819,7 +1019,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {history.map((item, idx) => (
-                  <tr key={item.id || idx} className="hover:bg-slate-50 transition">
+                  <tr key={`${item.id || "history"}-${idx}`} className="hover:bg-slate-50 transition">
                     <td className="py-3.5 px-4 font-mono text-slate-500 whitespace-nowrap">
                       {new Date(item.timestamp).toLocaleString("en-IN", {
                         dateStyle: "medium",

@@ -5,21 +5,32 @@
     "whatsappNumber": "+918849596369",
     "paymentNumber": "+919054358668",
     "paymentName": "Juned Rafik Patel",
-    "tournamentDate": "08 November 2026",
-    "tournamentDay": "Sunday",
+    "tournamentDate": "07 November 2026",
+    "tournamentDay": "Saturday",
     "tournamentTime": "09:00 PM IST",
     "entryTime": "08:45 PM IST",
     "hidePointsTable": true,
     "squadPrice": 40,
-    "winnerPrize": 1200,
-    "runnerUpPrize": 600,
-    "thirdPrize": 300,
+    "winnerPrize": 180,
+    "runnerUpPrize": 100,
+    "thirdPrize": 60,
     "maxTeams": 12,
     "maxPlayers": 48,
     "isRegistrationOpen": true,
-    "updatedAt": "2026-11-02T07:49:13.015+00:00"
+    "updatedAt": "2026-11-02T08:55:11.42+00:00"
   },
   "priceHistory": [
+    {
+      "id": "ph-1793609711420",
+      "timestamp": "2026-11-02T08:55:11.420Z",
+      "squadPrice": 40,
+      "winnerPrize": 180,
+      "runnerUpPrize": 100,
+      "thirdPrize": 60,
+      "totalPrizePool": 340,
+      "updatedBy": "Admin",
+      "note": "Prizes & Tournament settings modified from Admin Panel"
+    },
     {
       "id": "ph-1793605753015",
       "timestamp": "2026-11-02T07:49:13.015Z",
@@ -65,5 +76,34 @@
       "note": "Initial Tournament Launch Prices"
     }
   ],
-  "teams": []
+  "teams": [
+    {
+      "id": "PTL-5499",
+      "slotNumber": 1,
+      "teamName": "tg",
+      "igl": {
+        "name": "qw",
+        "uid": "",
+        "phone": "12345678909"
+      },
+      "player2": {
+        "name": "1",
+        "uid": ""
+      },
+      "player3": {
+        "name": "1",
+        "uid": ""
+      },
+      "player4": {
+        "name": "1",
+        "uid": ""
+      },
+      "registeredAt": "2026-11-02T09:05:05.499+00:00",
+      "paymentStatus": "paid",
+      "paymentAmount": 40,
+      "paymentUtr": "",
+      "paymentTime": "2026-11-02T09:05:05.499+00:00",
+      "paymentMethod": "UPI"
+    }
+  ]
 }
