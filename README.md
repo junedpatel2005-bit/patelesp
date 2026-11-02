@@ -13,7 +13,7 @@ Branded as **patelesp** (Patel Esports), it provides a split architecture with a
 - **Squad Registration (`/register`)**:
   - Team Name & Captain WhatsApp number.
   - Full 4-Player Roster: Full Name, Free Fire UID, and In-Game Name (IGN) for all 4 players (plus optional 5th substitute).
-  - UPI QR Code generation + copy UPI ID (`patelesp@upi`) + 12-digit UTR Transaction ID submission.
+  - UPI QR Code generation + copy UPI ID (`junedpatel2005@okaxis`) + 12-digit UTR Transaction ID submission.
 - **Esports Digital Ticket (`/ticket/[id]`)**:
   - Unique Ticket ID (e.g. `PTL-8841`).
   - Live Status Tracker (`PAYMENT UNDER REVIEW` / `VERIFIED & APPROVED` / `REJECTED`).
@@ -103,5 +103,5 @@ You can verify connection status anytime at `/api/db-status` or in `/admin/setti
 3. Import your GitHub repository.
 4. (Optional) Set Environment Variables in Vercel settings:
    - `ADMIN_SECRET_KEY`: `2412` (or your custom password)
-   - `NEXT_PUBLIC_UPI_ID`: `patelesp@upi`
+   - `NEXT_PUBLIC_UPI_ID`: `junedpatel2005@okaxis`
 5. Click **Deploy**!

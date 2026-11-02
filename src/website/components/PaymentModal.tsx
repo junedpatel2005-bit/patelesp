@@ -59,7 +59,7 @@ export default function PaymentModal({
   const rawNumber = tournament?.paymentNumber || "9054358668";
   // Clean phone number (strip leading +91 or +) for standard UPI VPAs
   const cleanPhone = rawNumber.replace(/\D/g, "").slice(-10);
-  const upiId = tournament?.upiId || `${cleanPhone}@ybl`;
+  const upiId = tournament?.upiId || "junedpatel2005@okaxis";
 
   // Compute exact unchangeable UPI payment URI
   const slotNum = team?.slotNumber ?? 1;

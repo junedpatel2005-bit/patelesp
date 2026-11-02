@@ -13,7 +13,7 @@ const defaultTournament: TournamentData = {
   whatsappGroupLink: "https://chat.whatsapp.com/invite",
   paymentNumber: "+919054358668",
   paymentName: "Juned Rafik Patel",
-  upiId: "9054358668@ybl",
+  upiId: "junedpatel2005@okaxis",
   tournamentDate: "07 November 2026",
   tournamentDay: "Saturday",
   tournamentTime: "09:00 PM IST",
@@ -123,8 +123,9 @@ export async function getTournament(): Promise<TournamentData> {
           developer: "Juned",
           whatsappNumber: row.contact_number || local.tournament.whatsappNumber || "+918849596369",
           whatsappGroupLink: rulesObj.whatsappGroupLink || local.tournament.whatsappGroupLink || "https://chat.whatsapp.com/invite",
-          paymentNumber: row.upi_id || local.tournament.paymentNumber || "+919054358668",
+          paymentNumber: rulesObj.paymentNumber || (row.upi_id && !row.upi_id.includes("@") ? row.upi_id : null) || local.tournament.paymentNumber || "+919054358668",
           paymentName: row.upi_name || local.tournament.paymentName || "Juned Rafik Patel",
+          upiId: rulesObj.upiId || (row.upi_id && row.upi_id.includes("@") ? row.upi_id : null) || local.tournament.upiId || "junedpatel2005@okaxis",
           tournamentDate: row.match_date || local.tournament.tournamentDate || "07 November 2026",
           tournamentDay: row.tagline || local.tournament.tournamentDay || "Saturday",
           tournamentTime: row.match_time || local.tournament.tournamentTime || "09:00 PM IST",
@@ -235,7 +236,7 @@ export async function updateTournamentSettings(
         contact_number: updates.whatsappNumber || local.tournament.whatsappNumber || "+918849596369",
         match_date: updates.tournamentDate || local.tournament.tournamentDate || "07 November 2026",
         match_time: updates.tournamentTime || local.tournament.tournamentTime || "09:00 PM IST",
-        upi_id: updates.paymentNumber || local.tournament.paymentNumber || "+919054358668",
+        upi_id: updates.upiId || local.tournament.upiId || "junedpatel2005@okaxis",
         upi_name: updates.paymentName || local.tournament.paymentName || "Juned Rafik Patel",
         entry_fee: squadPrice,
         first_prize: winnerPrize,
@@ -248,6 +249,8 @@ export async function updateTournamentSettings(
         room_announced: Boolean(updates.roomId ?? local.tournament.roomId),
         updated_at: now,
         rules: {
+          paymentNumber: updates.paymentNumber || local.tournament.paymentNumber || "+919054358668",
+          upiId: updates.upiId || local.tournament.upiId || "junedpatel2005@okaxis",
           entryTime: updates.entryTime || local.tournament.entryTime || "08:45 PM IST",
           hidePointsTable:
             updates.hidePointsTable !== undefined

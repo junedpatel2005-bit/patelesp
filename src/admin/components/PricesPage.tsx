@@ -82,7 +82,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
     tournament?.paymentName || "Juned Rafik Patel"
   );
   const [upiId, setUpiId] = useState<string>(() =>
-    tournament?.upiId || "9054358668@ybl"
+    tournament?.upiId || "junedpatel2005@okaxis"
   );
 
   // WhatsApp Group link & Room Credentials state
@@ -124,7 +124,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
       entryTime !== (tournament.entryTime || "08:45 PM IST") ||
       paymentNumber !== (tournament.paymentNumber || "+919054358668") ||
       paymentName !== (tournament.paymentName || "Juned Rafik Patel") ||
-      upiId !== (tournament.upiId || "9054358668@ybl") ||
+      upiId !== (tournament.upiId || "junedpatel2005@okaxis") ||
       hidePointsTable !== (tournament.hidePointsTable !== undefined ? tournament.hidePointsTable : true))
   );
 
@@ -151,7 +151,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
     setEntryTime(tournament.entryTime || "08:45 PM IST");
     setPaymentNumber(tournament.paymentNumber || "+919054358668");
     setPaymentName(tournament.paymentName || "Juned Rafik Patel");
-    setUpiId(tournament.upiId || "9054358668@ybl");
+    setUpiId(tournament.upiId || "junedpatel2005@okaxis");
     setWhatsappGroupLink(tournament.whatsappGroupLink || "https://chat.whatsapp.com/invite");
     setRoomId(tournament.roomId || "");
     setRoomPassword(tournament.roomPassword || "");
@@ -178,7 +178,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
     setEntryTime(tournament.entryTime || "08:45 PM IST");
     setPaymentNumber(tournament.paymentNumber || "+919054358668");
     setPaymentName(tournament.paymentName || "Juned Rafik Patel");
-    setUpiId(tournament.upiId || "9054358668@ybl");
+    setUpiId(tournament.upiId || "junedpatel2005@okaxis");
     setHidePointsTable(tournament.hidePointsTable !== undefined ? tournament.hidePointsTable : true);
     isDirtyRef.current = false;
   };
@@ -772,7 +772,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
                   type="text"
                   value={upiId}
                   onChange={(e) => setUpiId(e.target.value)}
-                  placeholder="9054358668@ybl"
+                  placeholder="junedpatel2005@okaxis"
                   required
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />

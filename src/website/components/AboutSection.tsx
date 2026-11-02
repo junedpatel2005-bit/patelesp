@@ -70,7 +70,7 @@ export default function AboutSection() {
             </p>
 
             <div className="mt-5 bg-zinc-950 border border-zinc-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="text-gray-400">UPI Payee: <strong className="text-white">9054358668@ybl</strong> (Juned Rafik Patel)</span>
+              <span className="text-gray-400">UPI Payee: <strong className="text-white">junedpatel2005@okaxis</strong> (Juned Rafik Patel)</span>
               <span className="text-red-500 font-bold">Support WhatsApp: +91 8849596369</span>
             </div>
           </div>

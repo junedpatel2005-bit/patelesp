@@ -164,7 +164,7 @@ export default function PaymentsPage({ tournament, teams, onRefresh }: PaymentsP
           </div>
           <div>•</div>
           <div>
-            Payee UPI: <strong className="text-white font-mono">{tournament?.upiId || "9054358668@ybl"}</strong>
+            Payee UPI: <strong className="text-white font-mono">{tournament?.upiId || "junedpatel2005@okaxis"}</strong>
           </div>
           <div>•</div>
           <div>
