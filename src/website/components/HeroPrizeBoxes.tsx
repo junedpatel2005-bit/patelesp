@@ -33,7 +33,6 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
             PATELESP <span className="text-red-600 text-glow-red">SHOWDOWN</span>
           </h1>
 
-          {/* Explicit requirement: "first show haear creted and devloped by juned" */}
           <div className="mt-3 inline-block bg-zinc-900/90 border border-zinc-800 px-5 py-2 rounded-lg">
             <p className="text-sm sm:text-base font-bold text-gray-200">
               Created and Developed by <span className="text-red-500 font-extrabold uppercase">Juned</span>
@@ -49,18 +48,13 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
           </div>
         </div>
 
-        {/* The 4 Boxes Requested:
-            1st: Price per squad
-            2nd: Winner
-            3rd: Runner up
-            4th: 3rd number
-        */}
+        {/* The 4 Boxes with Real Names (No box numbers) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Box 1: Price per Squad */}
+          {/* Card 1: Entry Fee / Squad Price */}
           <div className="relative bg-zinc-950 border-2 border-zinc-800 hover:border-red-600 rounded-xl p-6 transition-all duration-300 group shadow-lg hover:shadow-[0_0_25px_rgba(239,68,68,0.25)] flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-black tracking-widest text-red-500 uppercase bg-red-950/60 px-2.5 py-1 rounded border border-red-700/50">
-                BOX #1
+              <span className="text-xs font-black tracking-widest text-red-400 uppercase bg-red-950/60 px-3 py-1 rounded border border-red-700/50">
+                SQUAD ENTRY FEE
               </span>
               <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white group-hover:border-red-500 transition">
                 <DollarSign className="w-5 h-5 text-red-500" />
@@ -83,14 +77,14 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
             </div>
           </div>
 
-          {/* Box 2: Winner (1st Prize) */}
+          {/* Card 2: Winner (1st Prize) */}
           <div className="relative bg-zinc-950 border-2 border-red-600 rounded-xl p-6 transition-all duration-300 group shadow-[0_0_25px_rgba(239,68,68,0.25)] hover:shadow-[0_0_35px_rgba(239,68,68,0.45)] flex flex-col justify-between">
             <div className="absolute -top-3 right-4 bg-red-600 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded shadow">
-              CHAMPION
+              BOOYAH!
             </div>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-black tracking-widest text-white uppercase bg-red-600 px-2.5 py-1 rounded">
-                BOX #2
+              <span className="text-xs font-black tracking-widest text-white uppercase bg-red-600 px-3 py-1 rounded">
+                1ST PLACE WINNER
               </span>
               <div className="w-10 h-10 rounded-lg bg-red-600/20 border border-red-500 flex items-center justify-center text-red-500">
                 <Trophy className="w-5 h-5 text-white" />
@@ -98,7 +92,7 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
             </div>
             <div>
               <p className="text-xs font-bold text-red-400 uppercase tracking-wider">
-                Winner (1st Place)
+                Tournament Champions
               </p>
               <h3 className="text-3xl sm:text-4xl font-black text-white mt-1 text-glow-red">
                 {loading ? "..." : `₹${winnerPrize.toLocaleString()}`}
@@ -113,11 +107,11 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
             </div>
           </div>
 
-          {/* Box 3: Runner Up (2nd Prize) */}
+          {/* Card 3: Runner Up (2nd Prize) */}
           <div className="relative bg-zinc-950 border-2 border-zinc-800 hover:border-red-600 rounded-xl p-6 transition-all duration-300 group shadow-lg hover:shadow-[0_0_25px_rgba(239,68,68,0.25)] flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-black tracking-widest text-gray-300 uppercase bg-zinc-900 px-2.5 py-1 rounded border border-zinc-700">
-                BOX #3
+              <span className="text-xs font-black tracking-widest text-gray-200 uppercase bg-zinc-900 px-3 py-1 rounded border border-zinc-700">
+                2ND PLACE RUNNER UP
               </span>
               <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white group-hover:border-red-500 transition">
                 <Medal className="w-5 h-5 text-gray-300" />
@@ -125,7 +119,7 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
             </div>
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Runner Up (2nd Place)
+                2nd Place Squad
               </p>
               <h3 className="text-3xl sm:text-4xl font-black text-white mt-1 group-hover:text-red-500 transition">
                 {loading ? "..." : `₹${runnerUpPrize.toLocaleString()}`}
@@ -140,11 +134,11 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
             </div>
           </div>
 
-          {/* Box 4: 3rd Number (3rd Prize) */}
+          {/* Card 4: 3rd Place Cash Prize */}
           <div className="relative bg-zinc-950 border-2 border-zinc-800 hover:border-red-600 rounded-xl p-6 transition-all duration-300 group shadow-lg hover:shadow-[0_0_25px_rgba(239,68,68,0.25)] flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-black tracking-widest text-gray-300 uppercase bg-zinc-900 px-2.5 py-1 rounded border border-zinc-700">
-                BOX #4
+              <span className="text-xs font-black tracking-widest text-gray-200 uppercase bg-zinc-900 px-3 py-1 rounded border border-zinc-700">
+                3RD PLACE REWARD
               </span>
               <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white group-hover:border-red-500 transition">
                 <Award className="w-5 h-5 text-red-400" />
@@ -152,7 +146,7 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
             </div>
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                3rd Number (3rd Place)
+                3rd Place Squad
               </p>
               <h3 className="text-3xl sm:text-4xl font-black text-white mt-1 group-hover:text-red-500 transition">
                 {loading ? "..." : `₹${thirdPrize.toLocaleString()}`}

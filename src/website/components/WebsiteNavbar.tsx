@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Shield, Users, BookOpen, Lock, Menu, X } from "lucide-react";
+import { Shield, Users, BookOpen, Menu, X } from "lucide-react";
 
 export default function WebsiteNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -31,7 +31,7 @@ export default function WebsiteNavbar() {
             </div>
           </Link>
 
-          {/* Desktop Nav */}
+          {/* Desktop Nav - Admin removed, access only via URL /admin */}
           <nav className="hidden md:flex items-center gap-8">
             <Link
               href="/"
@@ -60,13 +60,6 @@ export default function WebsiteNavbar() {
               <BookOpen className="w-4 h-4 text-red-500" />
               Rules
             </Link>
-            <Link
-              href="/admin"
-              className="text-xs font-semibold tracking-wider text-gray-400 hover:text-white px-3 py-1.5 rounded border border-gray-800 hover:border-white transition flex items-center gap-1.5"
-            >
-              <Lock className="w-3.5 h-3.5 text-blue-400" />
-              Admin
-            </Link>
           </nav>
 
           {/* Mobile Menu Toggle */}
@@ -79,7 +72,7 @@ export default function WebsiteNavbar() {
           </button>
         </div>
 
-        {/* Mobile Dropdown */}
+        {/* Mobile Dropdown - Admin removed */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-800 flex flex-col gap-3 pb-6">
             <Link
@@ -112,14 +105,6 @@ export default function WebsiteNavbar() {
             >
               <BookOpen className="w-4 h-4 text-red-500" />
               Esports Rules
-            </Link>
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-xs font-semibold text-gray-400 hover:text-white py-2 flex items-center gap-1.5"
-            >
-              <Lock className="w-3.5 h-3.5 text-blue-400" />
-              Admin Access
             </Link>
           </div>
         )}

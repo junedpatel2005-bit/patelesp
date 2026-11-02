@@ -3,15 +3,16 @@ import { getTournament, updateTournamentPrizes } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export async function GET() {
   try {
-    const tournament = getTournament();
+    const tournament = await getTournament();
     return NextResponse.json(
       { success: true, tournament },
       {
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
         },
       }
     );
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = updateTournamentPrizes(
+    const result = await updateTournamentPrizes(
       Number(squadPrice),
       Number(winnerPrize),
       Number(runnerUpPrize),
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
       },
       {
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate",
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
         },
       }
     );

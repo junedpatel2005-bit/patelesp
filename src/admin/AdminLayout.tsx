@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import AdminLogin from "./components/AdminLogin";
 import AdminNavbar from "./components/AdminNavbar";
 import OverviewPage from "./components/OverviewPage";
@@ -32,17 +32,24 @@ export default function AdminLayout() {
     }
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
+      const timestamp = Date.now();
       const [tournRes, teamsRes] = await Promise.all([
-        fetch("/api/tournament", { cache: "no-store" }),
-        fetch("/api/teams", { cache: "no-store" }),
+        fetch(`/api/tournament?_t=${timestamp}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+        }),
+        fetch(`/api/teams?_t=${timestamp}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+        }),
       ]);
 
       const tournData = await tournRes.json();
       const teamsData = await teamsRes.json();
 
-      if (tournData.success) {
+      if (tournData.success && tournData.tournament) {
         setTournament(tournData.tournament);
       }
       if (teamsData.success && Array.isArray(teamsData.teams)) {
@@ -53,13 +60,13 @@ export default function AdminLayout() {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchData();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchData]);
 
   const handleLogout = () => {
     try {
@@ -74,10 +81,12 @@ export default function AdminLayout() {
 
   const handleTeamDeleted = (deletedId: string) => {
     setTeams((prev) => prev.filter((t) => t.id !== deletedId));
+    fetchData();
   };
 
   const handleResetAll = () => {
     setTeams([]);
+    fetchData();
   };
 
   if (checkingAuth) {

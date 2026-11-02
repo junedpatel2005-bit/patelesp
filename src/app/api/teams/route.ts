@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTeams, registerTeam, deleteTeam, resetAllTeams } from "@/lib/db";
+import {
+  getTeams,
+  registerTeam,
+  deleteTeam,
+  deletePlayerFromTeam,
+  updatePlayerInTeam,
+  resetAllTeams,
+} from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export async function GET() {
   try {
-    const teams = getTeams();
+    const teams = await getTeams();
     return NextResponse.json(
       { success: true, teams, count: teams.length, maxTeams: 12 },
       {
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
         },
       }
     );
@@ -47,7 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Player 4 Name is required." }, { status: 400 });
     }
 
-    const newTeam = registerTeam({
+    const newTeam = await registerTeam({
       teamName,
       igl,
       player2,
@@ -75,10 +83,11 @@ export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const teamId = searchParams.get("teamId");
+    const playerKey = searchParams.get("playerKey") as "igl" | "player2" | "player3" | "player4" | null;
     const reset = searchParams.get("reset");
 
     if (reset === "true") {
-      resetAllTeams();
+      await resetAllTeams();
       return NextResponse.json({ success: true, message: "All teams reset successfully." });
     }
 
@@ -86,15 +95,59 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Missing teamId parameter." }, { status: 400 });
     }
 
-    const deleted = deleteTeam(teamId);
+    // Delete individual player if playerKey specified
+    if (playerKey) {
+      const updatedTeam = await deletePlayerFromTeam(teamId, playerKey);
+      if (!updatedTeam) {
+        return NextResponse.json({ success: false, message: "Team not found." }, { status: 404 });
+      }
+      return NextResponse.json({
+        success: true,
+        message: `Player removed from ${updatedTeam.teamName}.`,
+        team: updatedTeam,
+      });
+    }
+
+    // Delete entire team
+    const deleted = await deleteTeam(teamId);
     if (!deleted) {
       return NextResponse.json({ success: false, message: "Team not found." }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, message: "Team removed and slot released." });
+    return NextResponse.json({ success: true, message: "Full team removed and slot released." });
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, message: error?.message || "Failed to remove team." },
+      { success: false, message: error?.message || "Failed to remove team/player." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { teamId, playerKey, playerInfo } = body;
+
+    if (!teamId || !playerKey || !playerInfo || !playerInfo.name) {
+      return NextResponse.json(
+        { success: false, message: "Missing required fields (teamId, playerKey, playerInfo)." },
+        { status: 400 }
+      );
+    }
+
+    const updated = await updatePlayerInTeam(teamId, playerKey, playerInfo);
+    if (!updated) {
+      return NextResponse.json({ success: false, message: "Team not found." }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Player updated in ${updated.teamName}.`,
+      team: updated,
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, message: error?.message || "Failed to update player." },
       { status: 500 }
     );
   }

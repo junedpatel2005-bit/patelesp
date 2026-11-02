@@ -32,7 +32,7 @@ export default function WebsiteFooter() {
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Quick Links - Admin removed, URL only */}
           <div>
             <h4 className="text-xs font-black uppercase tracking-widest text-white mb-4">
               Quick Navigation
@@ -57,11 +57,6 @@ export default function WebsiteFooter() {
               <li>
                 <Link href="/#rules" className="hover:text-red-500 transition">
                   Esports Rules &amp; Points System
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin" className="hover:text-blue-400 transition">
-                  Admin Access (Code 2412)
                 </Link>
               </li>
             </ul>

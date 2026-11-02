@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Shield, Users, CheckCircle, Clock, PlusCircle, ArrowLeft, RefreshCw } from "lucide-react";
 import { TeamRegistration } from "@/lib/types";
@@ -10,9 +10,12 @@ export default function ParticipateSlotsList() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchTeams = async () => {
+  const fetchTeams = useCallback(async () => {
     try {
-      const res = await fetch("/api/teams", { cache: "no-store" });
+      const res = await fetch(`/api/teams?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+      });
       const data = await res.json();
       if (data.success && Array.isArray(data.teams)) {
         setTeams(data.teams);
@@ -23,11 +26,20 @@ export default function ParticipateSlotsList() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTeams();
-  }, []);
+
+    const interval = setInterval(fetchTeams, 4000);
+    const handleFocus = () => fetchTeams();
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [fetchTeams]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -172,8 +184,8 @@ export default function ParticipateSlotsList() {
                             <span className="w-5 h-5 rounded bg-red-600 text-white font-black text-[10px] flex items-center justify-center shrink-0">
                               1
                             </span>
-                            <span className="font-bold text-white truncate max-w-[130px]">
-                              {team.igl.name}
+                            <span className={`font-bold truncate max-w-[130px] ${team.igl.name ? "text-white" : "text-gray-500 italic"}`}>
+                              {team.igl.name || "[Player Vacant]"}
                             </span>
                             <span className="text-[9px] uppercase font-black bg-red-950 text-red-400 px-1.5 py-0.5 rounded">
                               IGL
@@ -190,8 +202,8 @@ export default function ParticipateSlotsList() {
                             <span className="w-5 h-5 rounded bg-zinc-800 text-gray-300 font-bold text-[10px] flex items-center justify-center shrink-0">
                               2
                             </span>
-                            <span className="font-semibold text-gray-300 truncate max-w-[140px]">
-                              {team.player2.name}
+                            <span className={`font-semibold truncate max-w-[140px] ${team.player2.name ? "text-gray-300" : "text-gray-500 italic"}`}>
+                              {team.player2.name || "[Player Vacant]"}
                             </span>
                           </div>
                           <span className="text-[11px] text-gray-500 font-mono">
@@ -205,8 +217,8 @@ export default function ParticipateSlotsList() {
                             <span className="w-5 h-5 rounded bg-zinc-800 text-gray-300 font-bold text-[10px] flex items-center justify-center shrink-0">
                               3
                             </span>
-                            <span className="font-semibold text-gray-300 truncate max-w-[140px]">
-                              {team.player3.name}
+                            <span className={`font-semibold truncate max-w-[140px] ${team.player3.name ? "text-gray-300" : "text-gray-500 italic"}`}>
+                              {team.player3.name || "[Player Vacant]"}
                             </span>
                           </div>
                           <span className="text-[11px] text-gray-500 font-mono">
@@ -220,8 +232,8 @@ export default function ParticipateSlotsList() {
                             <span className="w-5 h-5 rounded bg-zinc-800 text-gray-300 font-bold text-[10px] flex items-center justify-center shrink-0">
                               4
                             </span>
-                            <span className="font-semibold text-gray-300 truncate max-w-[140px]">
-                              {team.player4.name}
+                            <span className={`font-semibold truncate max-w-[140px] ${team.player4.name ? "text-gray-300" : "text-gray-500 italic"}`}>
+                              {team.player4.name || "[Player Vacant]"}
                             </span>
                           </div>
                           <span className="text-[11px] text-gray-500 font-mono">

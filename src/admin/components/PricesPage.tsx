@@ -103,7 +103,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
           </div>
           <div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 uppercase">
-              Page 2: Prize Pool Management &amp; Price History
+              Prize Pool Management &amp; Price History
             </h2>
             <p className="text-xs text-slate-500">
               Set entry fee and tournament cash rewards. Changes update instantly on the main website!
@@ -116,7 +116,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
           <div className="mt-4 bg-emerald-50 border border-emerald-300 text-emerald-800 p-4 rounded-xl text-xs font-bold flex items-center gap-3 shadow-sm">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
             <span>
-              All tournament prices updated and saved successfully! The 4 boxes on the public website are now showing the new values immediately.
+              All tournament prices updated and saved successfully! The cards on the public website are now showing the new values immediately.
             </span>
           </div>
         )}
@@ -131,10 +131,10 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
         {/* EDIT PRICES FORM */}
         <form onSubmit={handleSavePrices} className="mt-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* 1. Price Per Squad */}
+            {/* 1. Squad Entry Price */}
             <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 flex items-center justify-between">
-                <span>Box 1: Price Per Squad (₹)</span>
+                <span>Squad Entry Price (₹)</span>
                 <DollarSign className="w-4 h-4 text-blue-600" />
               </label>
               <div className="relative">
@@ -159,7 +159,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
             {/* 2. Winner (1st Prize) */}
             <div className="bg-blue-50/50 border-2 border-blue-300 focus-within:border-blue-600 rounded-xl p-4 transition">
               <label className="block text-xs font-bold uppercase tracking-wider text-blue-900 mb-2 flex items-center justify-between">
-                <span>Box 2: Winner 1st Prize (₹)</span>
+                <span>Winner 1st Prize (₹)</span>
                 <Trophy className="w-4 h-4 text-blue-600" />
               </label>
               <div className="relative">
@@ -184,7 +184,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
             {/* 3. Runner Up (2nd Prize) */}
             <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 flex items-center justify-between">
-                <span>Box 3: Runner Up 2nd Prize (₹)</span>
+                <span>Runner Up 2nd Prize (₹)</span>
                 <Medal className="w-4 h-4 text-slate-600" />
               </label>
               <div className="relative">
@@ -206,10 +206,10 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
               </p>
             </div>
 
-            {/* 4. 3rd Number Prize */}
+            {/* 4. 3rd Place Prize */}
             <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 flex items-center justify-between">
-                <span>Box 4: 3rd Number Prize (₹)</span>
+                <span>3rd Place Prize (₹)</span>
                 <Award className="w-4 h-4 text-slate-600" />
               </label>
               <div className="relative">
@@ -276,7 +276,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
         </form>
       </div>
 
-      {/* PRICE HISTORY TABLE - User requested: "also old proce history" */}
+      {/* PRICE HISTORY TABLE */}
       <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
@@ -319,7 +319,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
                   <th className="py-3 px-4">Squad Price</th>
                   <th className="py-3 px-4">Winner (1st)</th>
                   <th className="py-3 px-4">Runner Up (2nd)</th>
-                  <th className="py-3 px-4">3rd Number</th>
+                  <th className="py-3 px-4">3rd Place</th>
                   <th className="py-3 px-4">Total Pool</th>
                   <th className="py-3 px-4">Changed By / Note</th>
                 </tr>

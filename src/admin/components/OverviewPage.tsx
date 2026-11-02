@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Shield, Users, Trophy, DollarSign, ExternalLink, CheckCircle, Smartphone } from "lucide-react";
+import { Shield, Users, Trophy, DollarSign, ExternalLink, Smartphone } from "lucide-react";
 import { TournamentData, TeamRegistration } from "@/lib/types";
 
 interface OverviewPageProps {
@@ -37,7 +37,7 @@ export default function OverviewPage({
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 bg-blue-500/30 border border-blue-400/40 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3">
             <Shield className="w-3.5 h-3.5" />
-            Page 1: Tournament Information &amp; Status
+            Tournament Information &amp; Status
           </div>
           <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tight">
             PATELESP CONTROL DASHBOARD
@@ -194,19 +194,19 @@ export default function OverviewPage({
 
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-              <span className="font-semibold text-slate-600">Squad Entry Price (Box 1)</span>
+              <span className="font-semibold text-slate-600">Squad Entry Fee</span>
               <span className="font-bold text-slate-900">₹{squadPrice}</span>
             </div>
             <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-              <span className="font-semibold text-slate-600">Winner 1st Prize (Box 2)</span>
+              <span className="font-semibold text-slate-600">Winner 1st Prize</span>
               <span className="font-bold text-blue-600">₹{winnerPrize}</span>
             </div>
             <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-              <span className="font-semibold text-slate-600">Runner Up 2nd Prize (Box 3)</span>
+              <span className="font-semibold text-slate-600">Runner Up 2nd Prize</span>
               <span className="font-bold text-slate-900">₹{runnerUpPrize}</span>
             </div>
             <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-              <span className="font-semibold text-slate-600">3rd Number Prize (Box 4)</span>
+              <span className="font-semibold text-slate-600">3rd Place Prize</span>
               <span className="font-bold text-slate-900">₹{thirdPrize}</span>
             </div>
           </div>
