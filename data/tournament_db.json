@@ -76,34 +76,5 @@
       "note": "Initial Tournament Launch Prices"
     }
   ],
-  "teams": [
-    {
-      "id": "PTL-5499",
-      "slotNumber": 1,
-      "teamName": "tg",
-      "igl": {
-        "name": "qw",
-        "uid": "",
-        "phone": "12345678909"
-      },
-      "player2": {
-        "name": "1",
-        "uid": ""
-      },
-      "player3": {
-        "name": "1",
-        "uid": ""
-      },
-      "player4": {
-        "name": "1",
-        "uid": ""
-      },
-      "registeredAt": "2026-11-02T09:05:05.499+00:00",
-      "paymentStatus": "paid",
-      "paymentAmount": 40,
-      "paymentUtr": "",
-      "paymentTime": "2026-11-02T09:05:05.499+00:00",
-      "paymentMethod": "UPI"
-    }
-  ]
+  "teams": []
 }

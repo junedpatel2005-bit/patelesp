@@ -110,8 +110,22 @@ export default function HomePage() {
       }
     };
 
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "patelesp_price_sync") {
+        fetchData();
+      }
+    };
+
     window.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("focus", fetchData);
+    window.addEventListener("storage", handleStorage);
+
+    // Periodic live sync every 5 seconds while page is open
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchData();
+      }
+    }, 5000);
 
     return () => {
       if (socket) {
@@ -123,8 +137,10 @@ export default function HomePage() {
         socket.off("player:updated", handleTeamsUpdate);
         socket.off("teams:reset", handleTeamsReset);
       }
+      clearInterval(pollInterval);
       window.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("focus", fetchData);
+      window.removeEventListener("storage", handleStorage);
     };
   }, [fetchData]);
 

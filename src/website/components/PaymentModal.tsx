@@ -52,7 +52,7 @@ export default function PaymentModal({
   const [currentStatus, setCurrentStatus] = useState<"paid" | "unpaid" | "pending">("unpaid");
 
   // Tournament payment settings
-  const squadPrice = Number(tournament?.squadPrice ?? 100);
+  const squadPrice = Number(tournament?.squadPrice ?? 40);
   const paymentName = tournament?.paymentName || "Juned Rafik Patel";
   const rawNumber = tournament?.paymentNumber || "9054358668";
   // Clean phone number (strip leading +91 or +) for standard UPI VPAs

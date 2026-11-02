@@ -14,15 +14,15 @@ const defaultTournament: TournamentData = {
   paymentNumber: "+919054358668",
   paymentName: "Juned Rafik Patel",
   upiId: "9054358668@ybl",
-  tournamentDate: "08 November 2026",
-  tournamentDay: "Sunday",
+  tournamentDate: "07 November 2026",
+  tournamentDay: "Saturday",
   tournamentTime: "09:00 PM IST",
   entryTime: "08:45 PM IST",
   hidePointsTable: true,
-  squadPrice: 100,
-  winnerPrize: 1000,
-  runnerUpPrize: 500,
-  thirdPrize: 250,
+  squadPrice: 40,
+  winnerPrize: 180,
+  runnerUpPrize: 100,
+  thirdPrize: 60,
   maxTeams: 12,
   maxPlayers: 48,
   isRegistrationOpen: true,
@@ -36,11 +36,11 @@ const initialPriceHistory: PriceHistoryRecord[] = [
   {
     id: "init-1",
     timestamp: new Date().toISOString(),
-    squadPrice: 100,
-    winnerPrize: 1000,
-    runnerUpPrize: 500,
-    thirdPrize: 250,
-    totalPrizePool: 1750,
+    squadPrice: 40,
+    winnerPrize: 180,
+    runnerUpPrize: 100,
+    thirdPrize: 60,
+    totalPrizePool: 340,
     updatedBy: "Admin",
     note: "Initial Tournament Launch Prices",
   },
@@ -244,18 +244,13 @@ export async function updateTournamentSettings(
         .select();
 
       if (error) {
-        console.error("Supabase update error:", error.message);
-        throw new Error(
-          `Supabase Error: ${error.message}. Please run the SQL schema in your Supabase SQL Editor.`
-        );
-      }
-
-      // If the row doesn't exist yet, insert it automatically
-      if (!updatedRows || updatedRows.length === 0) {
+        console.warn("Supabase update warning (fallback to local):", error.message);
+      } else if (!updatedRows || updatedRows.length === 0) {
+        // If the row doesn't exist yet, insert it automatically
         const { error: insertErr } = await supabase.from("tournaments").insert({
           id: "patel-ff-season-1",
           title: "PATELESP FREE FIRE SQUAD SHOWDOWN",
-          tagline: updates.tournamentDay || "Sunday",
+          tagline: updates.tournamentDay || "Saturday",
           game: "Free Fire Max / Free Fire",
           map: "Bermuda",
           mode: "Squad Battle Royale (4 Players)",
@@ -265,12 +260,11 @@ export async function updateTournamentSettings(
           ...sbUpdate,
         });
         if (insertErr) {
-          console.error("Supabase insert error:", insertErr.message);
-          throw new Error(`Supabase Insert Error: ${insertErr.message}`);
+          console.warn("Supabase insert warning:", insertErr.message);
         }
       }
-    } catch (e) {
-      console.error("Supabase update exception:", e);
+    } catch (e: any) {
+      console.warn("Supabase update non-fatal exception:", e?.message || e);
     }
   }
 
@@ -327,34 +321,6 @@ export async function getTeams(): Promise<TeamRegistration[]> {
         .order("slot_number", { ascending: true });
 
       if (!error && Array.isArray(data)) {
-        if (data.length === 0 && local.teams.length > 0) {
-          // Supabase is empty; sync initial local teams to Supabase cloud
-          for (const t of local.teams) {
-            try {
-              await supabase.from("teams").upsert({
-                id: t.id,
-                team_name: t.teamName,
-                captain_phone: t.igl.phone,
-                slot_number: t.slotNumber,
-                utr_number: `DIRECT-${Date.now()}`,
-                entry_fee_paid: local.tournament.squadPrice,
-                payment_status: "verified",
-                status: "approved",
-                players: [
-                  { name: t.igl.name, uid: t.igl.uid, isCaptain: true },
-                  { name: t.player2.name, uid: t.player2.uid },
-                  { name: t.player3.name, uid: t.player3.uid },
-                  { name: t.player4.name, uid: t.player4.uid },
-                ],
-                created_at: t.registeredAt,
-              });
-            } catch (err) {
-              console.error("Seeding team to Supabase error:", err);
-            }
-          }
-          return local.teams;
-        }
-
         const cloudTeams: TeamRegistration[] = data.map((row: any) => {
           const players = Array.isArray(row.players) ? row.players : [];
           const rawStatus = (row.payment_status || "").toLowerCase();
@@ -388,7 +354,7 @@ export async function getTeams(): Promise<TeamRegistration[]> {
             },
             registeredAt: row.created_at || new Date().toISOString(),
             paymentStatus: pStatus,
-            paymentAmount: Number(row.entry_fee_paid || local.tournament.squadPrice || 100),
+            paymentAmount: Number(row.entry_fee_paid || local.tournament.squadPrice || 40),
             paymentUtr: row.utr_number && !row.utr_number.startsWith("DIRECT-") ? row.utr_number : "",
             paymentTime: row.created_at,
             paymentMethod: "UPI",
@@ -400,14 +366,14 @@ export async function getTeams(): Promise<TeamRegistration[]> {
         return cloudTeams;
       }
     } catch (e) {
-      console.error("Supabase getTeams error, fallback to local:", e);
+      console.warn("Supabase getTeams error, fallback to local:", e);
     }
   }
 
   return local.teams.map((t) => ({
     ...t,
     paymentStatus: t.paymentStatus || "unpaid",
-    paymentAmount: t.paymentAmount ?? local.tournament.squadPrice ?? 100,
+    paymentAmount: t.paymentAmount ?? local.tournament.squadPrice ?? 40,
     paymentUtr: t.paymentUtr || "",
   }));
 }
@@ -440,7 +406,8 @@ export async function registerTeam(data: {
   const teamId = `PTL-${Date.now().toString().slice(-4)}`;
   const now = new Date().toISOString();
   const local = ensureLocalFile();
-  const entryFee = Number(local.tournament.squadPrice || 100);
+  const tournament = await getTournament();
+  const entryFee = Number(tournament.squadPrice || local.tournament.squadPrice || 40);
   const initialPaymentStatus = data.paymentStatus || "unpaid";
 
   const newTeam: TeamRegistration = {
@@ -510,20 +477,18 @@ export async function deleteTeam(teamId: string, slotNumber?: number): Promise<b
 
   if (isSupabaseReady() && supabase) {
     try {
-      const numericSlot = slotNumber || Number(teamId.replace(/\D/g, ""));
-      const filter =
-        !isNaN(numericSlot) && numericSlot > 0
-          ? `id.eq.${teamId},slot_number.eq.${numericSlot}`
-          : `id.eq.${teamId}`;
-
-      const { error } = await supabase.from("teams").delete().or(filter);
-      if (!error) {
-        supabaseSuccess = true;
-      } else {
-        console.error("Supabase deleteTeam error:", error.message);
+      // 1. Delete by primary ID
+      if (teamId) {
+        const { error: idErr } = await supabase.from("teams").delete().eq("id", teamId);
+        if (!idErr) supabaseSuccess = true;
       }
-    } catch (e) {
-      console.error("Supabase deleteTeam exception:", e);
+      // 2. Also delete by slot_number if given or if teamId contains slot
+      const numericSlot = slotNumber || Number(teamId.replace(/\D/g, ""));
+      if (!isNaN(numericSlot) && numericSlot > 0 && numericSlot <= 12) {
+        await supabase.from("teams").delete().eq("slot_number", numericSlot);
+      }
+    } catch (e: any) {
+      console.warn("Supabase deleteTeam exception:", e?.message || e);
     }
   }
 
@@ -534,7 +499,7 @@ export async function deleteTeam(teamId: string, slotNumber?: number): Promise<b
   );
   persistLocalFile(local);
 
-  return supabaseSuccess || local.teams.length !== initialCount || true;
+  return true;
 }
 
 export async function deletePlayerFromTeam(

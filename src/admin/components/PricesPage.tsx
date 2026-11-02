@@ -30,18 +30,20 @@ interface PricesPageProps {
 }
 
 export default function PricesPage({ tournament, onTournamentUpdated }: PricesPageProps) {
-  // Input form state (Strings to avoid leading zero "040" bugs and allow clean backspacing)
-  const [squadPrice, setSquadPrice] = useState<string>("100");
-  const [winnerPrize, setWinnerPrize] = useState<string>("1000");
-  const [runnerUpPrize, setRunnerUpPrize] = useState<string>("500");
-  const [thirdPrize, setThirdPrize] = useState<string>("250");
+  // Input form state initialized from tournament (Strings to avoid leading zero bugs)
+  const [squadPrice, setSquadPrice] = useState<string>(() =>
+    tournament?.squadPrice !== undefined ? String(tournament.squadPrice) : "40"
+  );
+  const [winnerPrize, setWinnerPrize] = useState<string>(() =>
+    tournament?.winnerPrize !== undefined ? String(tournament.winnerPrize) : "180"
+  );
+  const [runnerUpPrize, setRunnerUpPrize] = useState<string>(() =>
+    tournament?.runnerUpPrize !== undefined ? String(tournament.runnerUpPrize) : "100"
+  );
+  const [thirdPrize, setThirdPrize] = useState<string>(() =>
+    tournament?.thirdPrize !== undefined ? String(tournament.thirdPrize) : "60"
+  );
   const [note, setNote] = useState<string>("");
-
-  // Schedule & Timing state
-  const [tournamentDate, setTournamentDate] = useState<string>("08 November 2026");
-  const [tournamentDay, setTournamentDay] = useState<string>("Sunday");
-  const [tournamentTime, setTournamentTime] = useState<string>("09:00 PM IST");
-  const [entryTime, setEntryTime] = useState<string>("08:45 PM IST");
 
   // Helper to parse date string into YYYY-MM-DD for native <input type="date">
   const parseToIso = (str: string): string => {
@@ -54,24 +56,55 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
         return `${year}-${month}-${day}`;
       }
     } catch (e) {}
-    return "2026-11-08";
+    return "2026-11-07";
   };
 
-  const [calendarIso, setCalendarIso] = useState<string>("2026-11-08");
+  // Schedule & Timing state
+  const [tournamentDate, setTournamentDate] = useState<string>(() =>
+    tournament?.tournamentDate || "07 November 2026"
+  );
+  const [tournamentDay, setTournamentDay] = useState<string>(() =>
+    tournament?.tournamentDay || "Saturday"
+  );
+  const [tournamentTime, setTournamentTime] = useState<string>(() =>
+    tournament?.tournamentTime || "09:00 PM IST"
+  );
+  const [entryTime, setEntryTime] = useState<string>(() =>
+    tournament?.entryTime || "08:45 PM IST"
+  );
+  const [calendarIso, setCalendarIso] = useState<string>(() =>
+    tournament?.tournamentDate ? parseToIso(tournament.tournamentDate) : "2026-11-07"
+  );
 
   // Payment details state
-  const [paymentNumber, setPaymentNumber] = useState<string>("+919054358668");
-  const [paymentName, setPaymentName] = useState<string>("Juned Rafik Patel");
-  const [upiId, setUpiId] = useState<string>("9054358668@ybl");
+  const [paymentNumber, setPaymentNumber] = useState<string>(() =>
+    tournament?.paymentNumber || "+919054358668"
+  );
+  const [paymentName, setPaymentName] = useState<string>(() =>
+    tournament?.paymentName || "Juned Rafik Patel"
+  );
+  const [upiId, setUpiId] = useState<string>(() =>
+    tournament?.upiId || "9054358668@ybl"
+  );
 
   // WhatsApp Group link & Room Credentials state
-  const [whatsappGroupLink, setWhatsappGroupLink] = useState<string>("https://chat.whatsapp.com/invite");
-  const [roomId, setRoomId] = useState<string>("");
-  const [roomPassword, setRoomPassword] = useState<string>("");
-  const [isRoomLive, setIsRoomLive] = useState<boolean>(false);
+  const [whatsappGroupLink, setWhatsappGroupLink] = useState<string>(() =>
+    tournament?.whatsappGroupLink || "https://chat.whatsapp.com/invite"
+  );
+  const [roomId, setRoomId] = useState<string>(() =>
+    tournament?.roomId || ""
+  );
+  const [roomPassword, setRoomPassword] = useState<string>(() =>
+    tournament?.roomPassword || ""
+  );
+  const [isRoomLive, setIsRoomLive] = useState<boolean>(() =>
+    tournament?.isRoomLive ?? false
+  );
 
   // Points table visibility toggle
-  const [hidePointsTable, setHidePointsTable] = useState<boolean>(true);
+  const [hidePointsTable, setHidePointsTable] = useState<boolean>(() =>
+    tournament?.hidePointsTable !== undefined ? tournament.hidePointsTable : true
+  );
 
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -82,32 +115,80 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [clearingHistory, setClearingHistory] = useState(false);
 
-  // Sync inputs when tournament data loads or updates
-  useEffect(() => {
-    if (tournament) {
-      setSquadPrice(String(tournament.squadPrice ?? 100));
-      setWinnerPrize(String(tournament.winnerPrize ?? 1000));
-      setRunnerUpPrize(String(tournament.runnerUpPrize ?? 500));
-      setThirdPrize(String(tournament.thirdPrize ?? 250));
-      setTournamentDate(tournament.tournamentDate || "08 November 2026");
-      setTournamentDay(tournament.tournamentDay || "Sunday");
-      setTournamentTime(tournament.tournamentTime || "09:00 PM IST");
-      setEntryTime(tournament.entryTime || "08:45 PM IST");
-      setPaymentNumber(tournament.paymentNumber || "+919054358668");
-      setPaymentName(tournament.paymentName || "Juned Rafik Patel");
-      setUpiId(tournament.upiId || "9054358668@ybl");
-      setWhatsappGroupLink(tournament.whatsappGroupLink || "https://chat.whatsapp.com/invite");
-      setRoomId(tournament.roomId || "");
-      setRoomPassword(tournament.roomPassword || "");
-      setIsRoomLive(tournament.isRoomLive ?? false);
-      setHidePointsTable(tournament.hidePointsTable !== undefined ? tournament.hidePointsTable : true);
+  // Prevent background refreshes/window focus from wiping out unsaved edits
+  const hasInitializedRef = React.useRef(false);
+  const isDirtyRef = React.useRef(false);
 
-      if (tournament.tournamentDate) {
-        const iso = parseToIso(tournament.tournamentDate);
-        if (iso) setCalendarIso(iso);
-      }
+  const isModified = Boolean(
+    tournament &&
+    (squadPrice !== String(tournament.squadPrice ?? 40) ||
+      winnerPrize !== String(tournament.winnerPrize ?? 180) ||
+      runnerUpPrize !== String(tournament.runnerUpPrize ?? 100) ||
+      thirdPrize !== String(tournament.thirdPrize ?? 60) ||
+      tournamentDate !== (tournament.tournamentDate || "07 November 2026") ||
+      tournamentDay !== (tournament.tournamentDay || "Saturday") ||
+      tournamentTime !== (tournament.tournamentTime || "09:00 PM IST") ||
+      entryTime !== (tournament.entryTime || "08:45 PM IST") ||
+      paymentNumber !== (tournament.paymentNumber || "+919054358668") ||
+      paymentName !== (tournament.paymentName || "Juned Rafik Patel") ||
+      upiId !== (tournament.upiId || "9054358668@ybl") ||
+      hidePointsTable !== (tournament.hidePointsTable !== undefined ? tournament.hidePointsTable : true))
+  );
+
+  useEffect(() => {
+    isDirtyRef.current = isModified;
+  }, [isModified]);
+
+  // Sync inputs ONLY when NOT modified by user, so background polls never overwrite edits!
+  useEffect(() => {
+    if (!tournament) return;
+
+    if (hasInitializedRef.current && isDirtyRef.current) {
+      // User is currently editing! Do NOT overwrite inputs.
+      return;
     }
+
+    setSquadPrice(String(tournament.squadPrice ?? 40));
+    setWinnerPrize(String(tournament.winnerPrize ?? 180));
+    setRunnerUpPrize(String(tournament.runnerUpPrize ?? 100));
+    setThirdPrize(String(tournament.thirdPrize ?? 60));
+    setTournamentDate(tournament.tournamentDate || "07 November 2026");
+    setTournamentDay(tournament.tournamentDay || "Saturday");
+    setTournamentTime(tournament.tournamentTime || "09:00 PM IST");
+    setEntryTime(tournament.entryTime || "08:45 PM IST");
+    setPaymentNumber(tournament.paymentNumber || "+919054358668");
+    setPaymentName(tournament.paymentName || "Juned Rafik Patel");
+    setUpiId(tournament.upiId || "9054358668@ybl");
+    setWhatsappGroupLink(tournament.whatsappGroupLink || "https://chat.whatsapp.com/invite");
+    setRoomId(tournament.roomId || "");
+    setRoomPassword(tournament.roomPassword || "");
+    setIsRoomLive(tournament.isRoomLive ?? false);
+    setHidePointsTable(tournament.hidePointsTable !== undefined ? tournament.hidePointsTable : true);
+
+    if (tournament.tournamentDate) {
+      const iso = parseToIso(tournament.tournamentDate);
+      if (iso) setCalendarIso(iso);
+    }
+
+    hasInitializedRef.current = true;
   }, [tournament]);
+
+  const handleDiscardChanges = () => {
+    if (!tournament) return;
+    setSquadPrice(String(tournament.squadPrice ?? 40));
+    setWinnerPrize(String(tournament.winnerPrize ?? 180));
+    setRunnerUpPrize(String(tournament.runnerUpPrize ?? 100));
+    setThirdPrize(String(tournament.thirdPrize ?? 60));
+    setTournamentDate(tournament.tournamentDate || "07 November 2026");
+    setTournamentDay(tournament.tournamentDay || "Saturday");
+    setTournamentTime(tournament.tournamentTime || "09:00 PM IST");
+    setEntryTime(tournament.entryTime || "08:45 PM IST");
+    setPaymentNumber(tournament.paymentNumber || "+919054358668");
+    setPaymentName(tournament.paymentName || "Juned Rafik Patel");
+    setUpiId(tournament.upiId || "9054358668@ybl");
+    setHidePointsTable(tournament.hidePointsTable !== undefined ? tournament.hidePointsTable : true);
+    isDirtyRef.current = false;
+  };
 
   // Handle calendar date picker change
   const handleCalendarPick = (isoVal: string) => {
@@ -278,6 +359,8 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
       }
 
       onTournamentUpdated(data.tournament);
+      isDirtyRef.current = false;
+      hasInitializedRef.current = false;
       if (data.historyRecord) {
         setHistory((prev) => {
           if (prev.some((h) => h.id === data.historyRecord.id)) return prev;
@@ -298,23 +381,10 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
     }
   };
 
-  const isModified =
-    tournament &&
-    (squadPrice !== String(tournament.squadPrice) ||
-      winnerPrize !== String(tournament.winnerPrize) ||
-      runnerUpPrize !== String(tournament.runnerUpPrize) ||
-      thirdPrize !== String(tournament.thirdPrize) ||
-      tournamentDate !== (tournament.tournamentDate || "08 November 2026") ||
-      tournamentDay !== (tournament.tournamentDay || "Sunday") ||
-      tournamentTime !== (tournament.tournamentTime || "09:00 PM IST") ||
-      entryTime !== (tournament.entryTime || "08:45 PM IST") ||
-      paymentNumber !== (tournament.paymentNumber || "+919054358668") ||
-      paymentName !== (tournament.paymentName || "Juned Rafik Patel") ||
-      upiId !== (tournament.upiId || "9054358668@ybl") ||
-      hidePointsTable !== (tournament.hidePointsTable !== undefined ? tournament.hidePointsTable : true));
-
   const calculatedTotal =
-    Number(winnerPrize || 0) + Number(runnerUpPrize || 0) + Number(thirdPrize || 0);
+    Number(squadPrice || 0) > 0
+      ? Number(winnerPrize || 0) + Number(runnerUpPrize || 0) + Number(thirdPrize || 0)
+      : 0;
 
   return (
     <div className="space-y-8">
@@ -364,14 +434,24 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
                 ⚠️ You have edited values on this screen that are NOT yet published! Click <u>SAVE &amp; PUBLISH CHANGES</u> to update the public website.
               </span>
             </div>
-            <button
-              type="button"
-              onClick={handleSaveAll}
-              disabled={saving}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-black text-xs uppercase px-4 py-2 rounded-lg shrink-0 transition"
-            >
-              SAVE NOW
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleDiscardChanges}
+                disabled={saving}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs uppercase px-3 py-2 rounded-lg transition"
+              >
+                DISCARD
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveAll}
+                disabled={saving}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-black text-xs uppercase px-4 py-2 rounded-lg transition"
+              >
+                SAVE NOW
+              </button>
+            </div>
           </div>
         )}
 

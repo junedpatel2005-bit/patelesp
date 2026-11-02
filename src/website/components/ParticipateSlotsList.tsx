@@ -90,6 +90,19 @@ export default function ParticipateSlotsList() {
     const handleFocus = () => fetchTeams();
     window.addEventListener("focus", handleFocus);
 
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "patelesp_price_sync") {
+        fetchTeams();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchTeams();
+      }
+    }, 5000);
+
     return () => {
       if (socket) {
         socket.off("teams:updated", handleTeamsUpdate);
@@ -99,7 +112,9 @@ export default function ParticipateSlotsList() {
         socket.off("player:updated", handleTeamsUpdate);
         socket.off("teams:reset", handleTeamsReset);
       }
+      clearInterval(pollInterval);
       window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleStorage);
     };
   }, [fetchTeams]);
 

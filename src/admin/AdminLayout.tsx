@@ -125,8 +125,22 @@ export default function AdminLayout() {
       socket.on("teams:reset", handleTeamsReset);
     }
 
-    const handleFocus = () => fetchData();
+    let lastFetchTime = 0;
+    const handleFocus = () => {
+      const now = Date.now();
+      if (now - lastFetchTime > 15000) {
+        lastFetchTime = now;
+        fetchData();
+      }
+    };
     window.addEventListener("focus", handleFocus);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "patelesp_price_sync") {
+        fetchData();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
 
     return () => {
       if (socket) {
@@ -139,6 +153,7 @@ export default function AdminLayout() {
         socket.off("teams:reset", handleTeamsReset);
       }
       window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleStorage);
     };
   }, [isAuthenticated, fetchData]);
 

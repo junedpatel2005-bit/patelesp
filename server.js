@@ -11,9 +11,37 @@ const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
+  let io = null;
+
   const httpServer = createServer(async (req, res) => {
     try {
       const parsedUrl = parse(req.url, true);
+
+      // Internal broadcast endpoint for Next.js worker threads / route handlers
+      if (parsedUrl.pathname === "/api/socket-internal-broadcast" && req.method === "POST") {
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk;
+        });
+        req.on("end", () => {
+          try {
+            const { event, payload } = JSON.parse(body);
+            if (event && io) {
+              io.emit(event, payload);
+              if (event === "tournament:updated") {
+                io.emit("prices:updated", payload);
+              }
+            }
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: true }));
+          } catch (e) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid payload" }));
+          }
+        });
+        return;
+      }
+
       await handle(req, res, parsedUrl);
     } catch (err) {
       console.error("Error occurred handling", req.url, err);
@@ -22,7 +50,7 @@ app.prepare().then(() => {
     }
   });
 
-  const io = new Server(httpServer, {
+  io = new Server(httpServer, {
     path: "/socket.io",
     cors: {
       origin: "*",
@@ -31,7 +59,7 @@ app.prepare().then(() => {
     transports: ["websocket", "polling"],
   });
 
-  // Attach io to global so Next.js route handlers can access it
+  // Attach io to global so Next.js route handlers can access it if in same thread
   global.io = io;
 
   io.on("connection", (socket) => {
