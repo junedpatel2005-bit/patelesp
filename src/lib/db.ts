@@ -402,20 +402,30 @@ export async function registerTeam(data: {
   player4: { name: string; uid?: string };
   paymentStatus?: "paid" | "unpaid" | "pending";
   paymentUtr?: string;
+  slotNumber?: number;
 }): Promise<TeamRegistration> {
   const currentTeams = await getTeams();
 
   if (currentTeams.length >= 12) {
-    throw new Error("All 12 Slots are full! Maximum 48 players allowed.");
+    throw new Error("All 12 Free Fire Custom Room Slots are full! Maximum 48 players allowed.");
   }
 
-  // Find next available slot number 1-12
+  // Determine assigned slot number (Free Fire Custom Room Slot 1-12)
   const occupiedSlots = new Set(currentTeams.map((t) => t.slotNumber));
   let assignedSlot = 1;
-  for (let i = 1; i <= 12; i++) {
-    if (!occupiedSlots.has(i)) {
-      assignedSlot = i;
-      break;
+
+  if (data.slotNumber && data.slotNumber >= 1 && data.slotNumber <= 12) {
+    if (occupiedSlots.has(data.slotNumber)) {
+      const existing = currentTeams.find((t) => t.slotNumber === data.slotNumber);
+      throw new Error(`Free Fire Custom Room Slot #${data.slotNumber} is already occupied by "${existing?.teamName || "another team"}". Please choose an open slot.`);
+    }
+    assignedSlot = data.slotNumber;
+  } else {
+    for (let i = 1; i <= 12; i++) {
+      if (!occupiedSlots.has(i)) {
+        assignedSlot = i;
+        break;
+      }
     }
   }
 
@@ -707,6 +717,47 @@ export async function updateTeamPaymentStatus(
   } else {
     local.teams.push(team);
   }
+  persistLocalFile(local);
+
+  return team;
+}
+
+export async function updateTeamSlot(
+  teamId: string,
+  newSlotNumber: number
+): Promise<TeamRegistration | null> {
+  if (newSlotNumber < 1 || newSlotNumber > 12) {
+    throw new Error("Free Fire Custom Room Slot number must be between 1 and 12.");
+  }
+
+  const currentTeams = await getTeams();
+  const team = currentTeams.find((t) => t.id === teamId || String(t.slotNumber) === teamId);
+  if (!team) return null;
+
+  const slotOccupant = currentTeams.find((t) => t.slotNumber === newSlotNumber && t.id !== team.id);
+  if (slotOccupant) {
+    throw new Error(`Slot #${newSlotNumber} is already occupied by "${slotOccupant.teamName}".`);
+  }
+
+  team.slotNumber = newSlotNumber;
+
+  // Sync to Supabase Cloud Database
+  if (isSupabaseReady() && supabase) {
+    try {
+      await executeWithCloudFallback(async (client) => {
+        return client.from("teams").update({ slot_number: newSlotNumber }).eq("id", team.id);
+      });
+    } catch (e) {
+      console.error("Supabase updateTeamSlot error:", e);
+    }
+  }
+
+  const local = ensureLocalFile();
+  const localTeam = local.teams.find((t) => t.id === team.id);
+  if (localTeam) {
+    localTeam.slotNumber = newSlotNumber;
+  }
+  local.teams.sort((a, b) => a.slotNumber - b.slotNumber);
   persistLocalFile(local);
 
   return team;

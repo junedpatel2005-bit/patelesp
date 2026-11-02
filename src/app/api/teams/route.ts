@@ -7,6 +7,7 @@ import {
   updatePlayerInTeam,
   resetAllTeams,
   updateTeamPaymentStatus,
+  updateTeamSlot,
 } from "@/lib/db";
 import {
   broadcastTeamRegistered,
@@ -46,7 +47,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { teamName, igl, player2, player3, player4 } = body;
+    const { teamName, igl, player2, player3, player4, slotNumber } = body;
 
     if (!teamName || !teamName.trim()) {
       return NextResponse.json({ success: false, message: "Team Name is required." }, { status: 400 });
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
       player2,
       player3,
       player4,
+      slotNumber: slotNumber ? Number(slotNumber) : undefined,
     });
 
     // Real-time Socket.IO broadcast to all connected clients
@@ -171,7 +173,26 @@ export async function DELETE(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { teamId, playerKey, playerInfo, paymentStatus, paymentUtr, paymentAmount } = body;
+    const { teamId, playerKey, playerInfo, paymentStatus, paymentUtr, paymentAmount, newSlotNumber } = body;
+
+    // Support moving team to a different Free Fire custom room slot
+    if (teamId && newSlotNumber !== undefined) {
+      const updated = await updateTeamSlot(teamId, Number(newSlotNumber));
+      if (!updated) {
+        return NextResponse.json({ success: false, message: "Team not found." }, { status: 404 });
+      }
+      try {
+        const allTeams = await getTeams();
+        broadcastPlayerUpdated(updated, allTeams);
+      } catch (socketErr) {
+        console.warn("Socket broadcast error in updateTeamSlot:", socketErr);
+      }
+      return NextResponse.json({
+        success: true,
+        message: `Team "${updated.teamName}" successfully moved to Slot #${updated.slotNumber}!`,
+        team: updated,
+      });
+    }
 
     // Support payment status update via PATCH /api/teams
     if (teamId && paymentStatus) {

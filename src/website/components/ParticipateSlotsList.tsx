@@ -354,7 +354,7 @@ export default function ParticipateSlotsList() {
                         Squad slot waiting for 4 players
                       </p>
                       <Link
-                        href="/#register"
+                        href={`/#register?slot=${slotNumber}`}
                         className="inline-flex items-center gap-1.5 text-xs font-black uppercase bg-zinc-900 hover:bg-red-600 text-gray-300 hover:text-white px-4 py-2 rounded-lg border border-zinc-800 hover:border-red-600 transition"
                       >
                         <PlusCircle className="w-3.5 h-3.5" />

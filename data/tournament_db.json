@@ -21,96 +21,107 @@
     "roomId": "",
     "roomPassword": "",
     "isRoomLive": false,
-    "updatedAt": "2026-11-02T13:55:33.527+00:00"
+    "updatedAt": "2026-11-02T14:15:46.015+00:00"
   },
   "priceHistory": [
     {
-      "id": "ph-1793627733527",
-      "timestamp": "2026-11-02T13:55:33.527Z",
+      "id": "ph-1793628946015",
+      "note": "Prizes & Tournament settings modified from Admin Panel",
+      "timestamp": "2026-11-02T14:15:46.015Z",
+      "updatedBy": "Admin",
       "squadPrice": 40,
+      "thirdPrize": 60,
       "winnerPrize": 180,
       "runnerUpPrize": 100,
-      "thirdPrize": 60,
-      "totalPrizePool": 340,
+      "totalPrizePool": 340
+    },
+    {
+      "id": "ph-1793627733527",
+      "note": "Prizes & Tournament settings modified from Admin Panel",
+      "timestamp": "2026-11-02T13:55:33.527Z",
       "updatedBy": "Admin",
-      "note": "Prizes & Tournament settings modified from Admin Panel"
+      "squadPrice": 40,
+      "thirdPrize": 60,
+      "winnerPrize": 180,
+      "runnerUpPrize": 100,
+      "totalPrizePool": 340
     },
     {
       "id": "ph-1793614477517",
+      "note": "Prizes & Tournament settings modified from Admin Panel",
       "timestamp": "2026-11-02T10:14:37.517Z",
+      "updatedBy": "Admin",
       "squadPrice": 50,
+      "thirdPrize": 60,
       "winnerPrize": 180,
       "runnerUpPrize": 100,
-      "thirdPrize": 60,
-      "totalPrizePool": 340,
-      "updatedBy": "Admin",
-      "note": "Prizes & Tournament settings modified from Admin Panel"
+      "totalPrizePool": 340
     },
     {
       "id": "ph-1793614474824",
+      "note": "Prizes & Tournament settings modified from Admin Panel",
       "timestamp": "2026-11-02T10:14:34.824Z",
+      "updatedBy": "Admin",
       "squadPrice": 50,
+      "thirdPrize": 60,
       "winnerPrize": 180,
       "runnerUpPrize": 100,
-      "thirdPrize": 60,
-      "totalPrizePool": 340,
-      "updatedBy": "Admin",
-      "note": "Prizes & Tournament settings modified from Admin Panel"
+      "totalPrizePool": 340
     },
     {
       "id": "ph-1793609711420",
+      "note": "Prizes & Tournament settings modified from Admin Panel",
       "timestamp": "2026-11-02T08:55:11.420Z",
+      "updatedBy": "Admin",
       "squadPrice": 40,
+      "thirdPrize": 60,
       "winnerPrize": 180,
       "runnerUpPrize": 100,
-      "thirdPrize": 60,
-      "totalPrizePool": 340,
-      "updatedBy": "Admin",
-      "note": "Prizes & Tournament settings modified from Admin Panel"
+      "totalPrizePool": 340
     },
     {
       "id": "ph-1793605753015",
+      "note": "Prizes & Tournament settings modified from Admin Panel",
       "timestamp": "2026-11-02T07:49:13.015Z",
+      "updatedBy": "Admin",
       "squadPrice": 40,
+      "thirdPrize": 350,
       "winnerPrize": 1500,
       "runnerUpPrize": 700,
-      "thirdPrize": 350,
-      "totalPrizePool": 2550,
-      "updatedBy": "Admin",
-      "note": "Prizes & Tournament settings modified from Admin Panel"
+      "totalPrizePool": 2550
     },
     {
       "id": "ph-1793605750529",
+      "note": "Tournament settings & prizes updated",
       "timestamp": "2026-11-02T07:49:10.529Z",
+      "updatedBy": "Admin",
       "squadPrice": 200,
+      "thirdPrize": 500,
       "winnerPrize": 2000,
       "runnerUpPrize": 1000,
-      "thirdPrize": 500,
-      "totalPrizePool": 3500,
-      "updatedBy": "Admin",
-      "note": "Tournament settings & prizes updated"
+      "totalPrizePool": 3500
     },
     {
       "id": "ph-1793599772360",
+      "note": "Updated by Admin Juned",
       "timestamp": "2026-11-02T06:09:32.360Z",
+      "updatedBy": "Admin",
       "squadPrice": 150,
+      "thirdPrize": 350,
       "winnerPrize": 1500,
       "runnerUpPrize": 700,
-      "thirdPrize": 350,
-      "totalPrizePool": 2550,
-      "updatedBy": "Admin",
-      "note": "Updated by Admin Juned"
+      "totalPrizePool": 2550
     },
     {
       "id": "init-1",
+      "note": "Initial Tournament Launch Prices",
       "timestamp": "2026-11-02T06:08:16.284Z",
+      "updatedBy": "Admin",
       "squadPrice": 100,
+      "thirdPrize": 250,
       "winnerPrize": 1000,
       "runnerUpPrize": 500,
-      "thirdPrize": 250,
-      "totalPrizePool": 1750,
-      "updatedBy": "Admin",
-      "note": "Initial Tournament Launch Prices"
+      "totalPrizePool": 1750
     }
   ],
   "teams": []

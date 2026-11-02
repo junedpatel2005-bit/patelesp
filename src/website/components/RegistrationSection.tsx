@@ -10,6 +10,7 @@ interface RegistrationSectionProps {
   teamsCount: number;
   maxTeams: number;
   tournament?: any;
+  teams?: TeamRegistration[];
   onRegistered: (team: TeamRegistration) => void;
 }
 
@@ -17,11 +18,54 @@ export default function RegistrationSection({
   teamsCount,
   maxTeams = 12,
   tournament,
+  teams = [],
   onRegistered,
 }: RegistrationSectionProps) {
   const isFull = teamsCount >= maxTeams;
 
   const [teamName, setTeamName] = useState("");
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
+
+  // Auto-read slot parameter from URL (e.g., ?slot=3 or #register?slot=3)
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      let slotParam = url.searchParams.get("slot");
+      if (!slotParam && url.hash.includes("slot=")) {
+        const match = url.hash.match(/slot=(\d+)/);
+        if (match) slotParam = match[1];
+      }
+      if (slotParam) {
+        const parsed = parseInt(slotParam, 10);
+        if (parsed >= 1 && parsed <= 12) {
+          setSelectedSlot(parsed);
+        }
+      }
+    }
+  }, []);
+
+  // Compute occupied slots map
+  const occupiedSlotsMap = React.useMemo(() => {
+    const map = new Map<number, TeamRegistration>();
+    if (Array.isArray(teams)) {
+      teams.forEach((t) => {
+        if (t.slotNumber >= 1 && t.slotNumber <= 12) {
+          map.set(t.slotNumber, t);
+        }
+      });
+    }
+    return map;
+  }, [teams]);
+
+  // First available slot
+  const firstAvailableSlot = React.useMemo(() => {
+    for (let i = 1; i <= 12; i++) {
+      if (!occupiedSlotsMap.has(i)) return i;
+    }
+    return null;
+  }, [occupiedSlotsMap]);
+
+  const activeSlot = selectedSlot && !occupiedSlotsMap.has(selectedSlot) ? selectedSlot : firstAvailableSlot;
   // IGL (Player 1)
   const [iglName, setIglName] = useState("");
   const [iglUid, setIglUid] = useState("");
@@ -127,6 +171,7 @@ export default function RegistrationSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           teamName,
+          slotNumber: activeSlot || undefined,
           igl: {
             name: iglName,
             uid: iglUid,
@@ -366,10 +411,104 @@ export default function RegistrationSection({
               </div>
             )}
 
+            {/* BOX: FREE FIRE CUSTOM ROOM 12-SLOT SELECTOR */}
+            <div className="mb-8 bg-black/70 border-2 border-zinc-800 rounded-2xl p-5 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-zinc-850">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded bg-red-600 text-white font-black text-xs flex items-center justify-center">
+                      1
+                    </span>
+                    <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
+                      Select Free Fire Custom Room Slot <span className="text-red-500">*</span>
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    Choose which room slot (1–12) your 4 players will sit in inside the Free Fire custom room.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase">
+                  <span className="flex items-center gap-1 text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Open Slot
+                  </span>
+                  <span className="flex items-center gap-1 text-red-400 bg-red-950/60 border border-red-800/60 px-2 py-0.5 rounded">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    Occupied
+                  </span>
+                </div>
+              </div>
+
+              {/* 12 Slot Buttons Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+                {Array.from({ length: 12 }, (_, i) => {
+                  const sNum = i + 1;
+                  const occupant = occupiedSlotsMap.get(sNum);
+                  const isOccupied = Boolean(occupant);
+                  const isSelected = activeSlot === sNum;
+
+                  return (
+                    <button
+                      key={sNum}
+                      type="button"
+                      disabled={isOccupied}
+                      onClick={() => setSelectedSlot(sNum)}
+                      className={`relative p-3 rounded-xl border-2 transition-all flex flex-col items-center justify-center text-center ${
+                        isOccupied
+                          ? "bg-zinc-950/80 border-zinc-900 opacity-60 cursor-not-allowed text-gray-500"
+                          : isSelected
+                          ? "bg-red-950/70 border-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] scale-[1.02] cursor-pointer"
+                          : "bg-zinc-900/90 border-zinc-800 hover:border-red-500/60 text-gray-300 hover:text-white cursor-pointer"
+                      }`}
+                    >
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                        Slot
+                      </span>
+                      <span className={`text-xl font-black ${isSelected ? "text-red-400" : isOccupied ? "text-gray-600" : "text-white"}`}>
+                        #{sNum}
+                      </span>
+
+                      {isOccupied ? (
+                        <span className="mt-1 text-[9px] font-extrabold uppercase text-red-400/90 truncate max-w-[90px] block" title={occupant?.teamName}>
+                          {occupant?.teamName || "TAKEN"}
+                        </span>
+                      ) : isSelected ? (
+                        <span className="mt-1 text-[9px] font-black uppercase text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/40">
+                          SELECTED
+                        </span>
+                      ) : (
+                        <span className="mt-1 text-[9px] font-bold uppercase text-emerald-400/80">
+                          AVAILABLE
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Active Selection Banner */}
+              {activeSlot && (
+                <div className="mt-4 p-3 bg-red-950/40 border border-red-600/40 rounded-xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-red-600 text-white font-black text-[10px] uppercase px-2 py-0.5 rounded">
+                      ROOM SLOT #{activeSlot}
+                    </span>
+                    <span className="text-gray-300 font-bold">
+                      Your squad is assigned to <strong className="text-white">SLOT #{activeSlot}</strong> in the Custom Room.
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-yellow-400 font-mono hidden sm:inline-block">
+                    4 Players Roster
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* BOX: TEAM NAME */}
             <div className="mb-8">
               <label className="block text-xs font-black uppercase tracking-wider text-gray-300 mb-2">
-                1. Team Name <span className="text-red-500">*</span>
+                2. Team Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -385,7 +524,7 @@ export default function RegistrationSection({
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b border-zinc-850 pb-2">
                 <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                  2. Squad Players Details (4 Players Required)
+                  3. Squad Players Details (4 Players Required)
                 </h3>
                 <span className="text-[11px] text-gray-400 font-medium">
                   UID is Optional • IGL Phone is Required

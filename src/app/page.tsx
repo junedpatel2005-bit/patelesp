@@ -158,6 +158,7 @@ export default function HomePage() {
       <RegistrationSection
         teamsCount={teams.length}
         maxTeams={tournament?.maxTeams ?? 12}
+        teams={teams}
         tournament={tournament}
         onRegistered={handleNewTeamRegistered}
       />

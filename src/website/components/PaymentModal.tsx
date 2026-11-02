@@ -18,6 +18,8 @@ import {
   X,
   Trash2,
   Download,
+  Gamepad2,
+  Users,
 } from "lucide-react";
 import { TeamRegistration, TournamentData } from "@/lib/types";
 import { getSocket } from "@/lib/socket-client";
@@ -258,6 +260,60 @@ export default function PaymentModal({
 
         {/* Modal Body */}
         <div className="p-4 sm:p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+          {/* Prominent Free Fire Custom Room Slot Badge */}
+          <div className="bg-gradient-to-br from-red-950 via-zinc-950 to-black border-2 border-red-500 rounded-2xl p-4 sm:p-5 text-center shadow-[0_0_25px_rgba(239,68,68,0.4)] relative">
+            <div className="inline-flex items-center gap-1.5 bg-red-600/30 border border-red-500/50 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider text-red-300 mb-2">
+              <Gamepad2 className="w-3.5 h-3.5 text-red-400" />
+              Free Fire Custom Room Assigned Slot
+            </div>
+
+            <div className="my-1">
+              <span className="text-xs uppercase font-extrabold tracking-widest text-gray-400 block mb-0.5">
+                YOUR ROOM SLOT NUMBER
+              </span>
+              <div className="inline-flex items-center gap-2 bg-black/80 border-2 border-red-600/70 px-5 py-2 rounded-2xl shadow-inner">
+                <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                  SLOT <span className="text-red-500">#{team.slotNumber}</span>
+                </span>
+              </div>
+            </div>
+
+            <p className="mt-2 text-xs sm:text-sm text-gray-200 font-bold">
+              Team: <span className="text-white uppercase">{team.teamName}</span> • Captain / IGL: <span className="text-red-400">{team.igl.name}</span>
+            </p>
+
+            {/* 4 Squad Players Roster */}
+            <div className="mt-3 grid grid-cols-2 gap-2 text-left bg-black/70 border border-zinc-800/80 p-2.5 rounded-xl text-[11px]">
+              <div className="truncate">
+                <span className="text-red-400 font-black mr-1">1.</span>
+                <span className="text-white font-bold">{team.igl.name || "IGL"}</span>
+                {team.igl.uid && <span className="text-gray-400 text-[10px] block font-mono">UID: {team.igl.uid}</span>}
+              </div>
+              <div className="truncate">
+                <span className="text-gray-400 font-black mr-1">2.</span>
+                <span className="text-gray-200">{team.player2.name || "Player 2"}</span>
+                {team.player2.uid && <span className="text-gray-400 text-[10px] block font-mono">UID: {team.player2.uid}</span>}
+              </div>
+              <div className="truncate">
+                <span className="text-gray-400 font-black mr-1">3.</span>
+                <span className="text-gray-200">{team.player3.name || "Player 3"}</span>
+                {team.player3.uid && <span className="text-gray-400 text-[10px] block font-mono">UID: {team.player3.uid}</span>}
+              </div>
+              <div className="truncate">
+                <span className="text-gray-400 font-black mr-1">4.</span>
+                <span className="text-gray-200">{team.player4.name || "Player 4"}</span>
+                {team.player4.uid && <span className="text-gray-400 text-[10px] block font-mono">UID: {team.player4.uid}</span>}
+              </div>
+            </div>
+
+            <div className="mt-3 bg-red-950/40 border border-red-600/30 rounded-xl py-2 px-3 text-[11px] text-yellow-300 font-semibold flex items-center justify-center gap-1.5 text-center">
+              <span>⚠️</span>
+              <span>
+                In Free Fire Custom Room, all 4 players MUST sit in <strong>SLOT #{team.slotNumber}</strong>!
+              </span>
+            </div>
+          </div>
+
           {/* Status Indicator Banner */}
           {currentStatus === "paid" ? (
             <div className="bg-emerald-950/80 border-2 border-emerald-500 rounded-2xl p-4 text-center">

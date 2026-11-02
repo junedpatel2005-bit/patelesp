@@ -15,6 +15,11 @@ import {
   Check,
   X,
   PlusCircle,
+  ArrowRightLeft,
+  Gamepad2,
+  LayoutGrid,
+  List,
+  Shield,
 } from "lucide-react";
 import { TeamRegistration } from "@/lib/types";
 
@@ -38,6 +43,27 @@ export default function TeamsPage({
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | "unpaid" | "paid">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"slots" | "list">("slots");
+
+  // Move Slot State
+  const [movingTeam, setMovingTeam] = useState<TeamRegistration | null>(null);
+  const [targetSlot, setTargetSlot] = useState<number>(1);
+  const [movingLoading, setMovingLoading] = useState(false);
+
+  // Manual Add Squad State
+  const [manualSlot, setManualSlot] = useState<number | null>(null);
+  const [manualTeamName, setManualTeamName] = useState("");
+  const [manualIglName, setManualIglName] = useState("");
+  const [manualIglUid, setManualIglUid] = useState("");
+  const [manualIglPhone, setManualIglPhone] = useState("");
+  const [manualP2Name, setManualP2Name] = useState("");
+  const [manualP2Uid, setManualP2Uid] = useState("");
+  const [manualP3Name, setManualP3Name] = useState("");
+  const [manualP3Uid, setManualP3Uid] = useState("");
+  const [manualP4Name, setManualP4Name] = useState("");
+  const [manualP4Uid, setManualP4Uid] = useState("");
+  const [manualLoading, setManualLoading] = useState(false);
+  const [manualError, setManualError] = useState<string | null>(null);
 
   // Edit Player State
   const [editingTarget, setEditingTarget] = useState<{
@@ -247,7 +273,94 @@ export default function TeamsPage({
     }
   };
 
-  // 5. Reset All Teams
+  // 5. Move Team to another Slot
+  const handleMoveSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!movingTeam) return;
+    setMovingLoading(true);
+    try {
+      const res = await fetch("/api/teams", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teamId: movingTeam.id,
+          newSlotNumber: targetSlot,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionMessage(`Team "${movingTeam.teamName}" moved to Free Fire Custom Room Slot #${targetSlot}!`);
+        setMovingTeam(null);
+        onRefresh();
+        setTimeout(() => setActionMessage(null), 4000);
+      } else {
+        alert(data.message || "Failed to move team slot");
+      }
+    } catch (err) {
+      alert("Error moving team slot");
+    } finally {
+      setMovingLoading(false);
+    }
+  };
+
+  // 6. Manual Add Team to a specific Slot by Admin
+  const handleManualRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualSlot) return;
+    setManualError(null);
+    setManualLoading(true);
+
+    const cleanPhone = manualIglPhone.replace(/\D/g, "");
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      setManualError("Please enter a valid 10-digit WhatsApp/Phone Number for the IGL.");
+      setManualLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/teams", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teamName: manualTeamName.trim(),
+          slotNumber: manualSlot,
+          igl: {
+            name: manualIglName.trim(),
+            uid: manualIglUid.trim(),
+            phone: `+91${cleanPhone}`,
+          },
+          player2: { name: manualP2Name.trim(), uid: manualP2Uid.trim() },
+          player3: { name: manualP3Name.trim(), uid: manualP3Uid.trim() },
+          player4: { name: manualP4Name.trim(), uid: manualP4Uid.trim() },
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionMessage(`Team "${manualTeamName}" successfully assigned to Slot #${manualSlot}!`);
+        setManualSlot(null);
+        setManualTeamName("");
+        setManualIglName("");
+        setManualIglUid("");
+        setManualIglPhone("");
+        setManualP2Name("");
+        setManualP2Uid("");
+        setManualP3Name("");
+        setManualP3Uid("");
+        setManualP4Name("");
+        setManualP4Uid("");
+        onRefresh();
+        setTimeout(() => setActionMessage(null), 4000);
+      } else {
+        setManualError(data.message || "Failed to register squad");
+      }
+    } catch (err: any) {
+      setManualError(err?.message || "Failed to register squad");
+    } finally {
+      setManualLoading(false);
+    }
+  };
+
+  // 7. Reset All Teams
   const handleConfirmReset = async () => {
     try {
       const res = await fetch("/api/teams?reset=true", { method: "DELETE" });
@@ -451,6 +564,236 @@ export default function TeamsPage({
         </div>
       )}
 
+      {/* Move Slot Modal */}
+      {movingTeam && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-blue-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <div>
+                <h3 className="text-base font-black text-slate-900 uppercase">
+                  Move Squad to Different Room Slot
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Squad: <strong>{movingTeam.teamName}</strong> (Currently in Slot #{movingTeam.slotNumber})
+                </p>
+              </div>
+              <button
+                onClick={() => setMovingTeam(null)}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleMoveSlot} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
+                  Select New Custom Room Slot (1 to 12)
+                </label>
+                <select
+                  value={targetSlot}
+                  onChange={(e) => setTargetSlot(Number(e.target.value))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 font-bold focus:outline-none focus:border-blue-600"
+                >
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const s = i + 1;
+                    const occ = teams.find((t) => t.slotNumber === s && t.id !== movingTeam.id);
+                    return (
+                      <option key={s} value={s} disabled={Boolean(occ)}>
+                        Slot #{s} {occ ? `(Occupied: ${occ.teamName})` : s === movingTeam.slotNumber ? "(Current Slot)" : "— Available / Empty"}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900">
+                Notice: When you move this squad to Slot #{targetSlot}, make sure to notify the IGL so they sit in Slot #{targetSlot} inside Free Fire.
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMovingTeam(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={movingLoading}
+                  className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-1.5 shadow"
+                >
+                  <ArrowRightLeft className="w-4 h-4" />
+                  {movingLoading ? "Moving Slot..." : `Move to Slot #${targetSlot}`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Add Squad Modal */}
+      {manualSlot && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-blue-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <div>
+                <h3 className="text-base font-black text-slate-900 uppercase">
+                  Assign Squad to Room Slot #{manualSlot}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Manually register a squad into this vacant room slot
+                </p>
+              </div>
+              <button
+                onClick={() => setManualSlot(null)}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {manualError && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{manualError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleManualRegister} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  Team Name *
+                </label>
+                <input
+                  type="text"
+                  value={manualTeamName}
+                  onChange={(e) => setManualTeamName(e.target.value)}
+                  placeholder="e.g. TEAM VIPER"
+                  required
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 font-bold focus:outline-none focus:border-blue-600"
+                />
+              </div>
+
+              {/* Player 1 - IGL */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <span className="text-xs font-bold text-blue-700 uppercase block">1. Player 1 (IGL / Captain) *</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={manualIglName}
+                    onChange={(e) => setManualIglName(e.target.value)}
+                    placeholder="IGL Name *"
+                    required
+                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                  <input
+                    type="tel"
+                    value={manualIglPhone}
+                    onChange={(e) => setManualIglPhone(e.target.value)}
+                    placeholder="10-digit Phone/WhatsApp *"
+                    required
+                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={manualIglUid}
+                  onChange={(e) => setManualIglUid(e.target.value)}
+                  placeholder="Free Fire UID (Optional)"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                />
+              </div>
+
+              {/* Player 2 */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <span className="text-xs font-bold text-slate-700 uppercase block">2. Player 2 *</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={manualP2Name}
+                    onChange={(e) => setManualP2Name(e.target.value)}
+                    placeholder="Player 2 Name *"
+                    required
+                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                  <input
+                    type="text"
+                    value={manualP2Uid}
+                    onChange={(e) => setManualP2Uid(e.target.value)}
+                    placeholder="Free Fire UID (Optional)"
+                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </div>
+
+              {/* Player 3 */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <span className="text-xs font-bold text-slate-700 uppercase block">3. Player 3 *</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={manualP3Name}
+                    onChange={(e) => setManualP3Name(e.target.value)}
+                    placeholder="Player 3 Name *"
+                    required
+                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                  <input
+                    type="text"
+                    value={manualP3Uid}
+                    onChange={(e) => setManualP3Uid(e.target.value)}
+                    placeholder="Free Fire UID (Optional)"
+                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </div>
+
+              {/* Player 4 */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <span className="text-xs font-bold text-slate-700 uppercase block">4. Player 4 *</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={manualP4Name}
+                    onChange={(e) => setManualP4Name(e.target.value)}
+                    placeholder="Player 4 Name *"
+                    required
+                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                  <input
+                    type="text"
+                    value={manualP4Uid}
+                    onChange={(e) => setManualP4Uid(e.target.value)}
+                    placeholder="Free Fire UID (Optional)"
+                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setManualSlot(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={manualLoading}
+                  className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-1.5 shadow"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  {manualLoading ? "Assigning..." : `Assign to Slot #${manualSlot}`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Unpaid Squads Attention Banner */}
       {unpaidCount > 0 && (
         <div className="bg-red-50 border-2 border-red-300 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
@@ -514,14 +857,43 @@ export default function TeamsPage({
             </button>
           </div>
 
-          <div className="sm:max-w-xs w-full">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search team, player, phone, slot..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
-            />
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setViewMode("slots")}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold uppercase transition ${
+                  viewMode === "slots"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                12 Room Slots
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold uppercase transition ${
+                  viewMode === "list"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+                List View
+              </button>
+            </div>
+
+            <div className="sm:max-w-xs w-full">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search team, player, phone, slot..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -549,7 +921,66 @@ export default function TeamsPage({
         </div>
       ) : (
         <div className="space-y-6">
-          {filteredTeams.map((team) => {
+          {viewMode === "slots" && !searchQuery.trim() && statusFilter === "all" && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-blue-50 border border-blue-200 px-4 py-3 rounded-2xl text-xs text-blue-900 font-bold">
+              <span className="flex items-center gap-2">
+                <Gamepad2 className="w-4 h-4 text-blue-600" />
+                <span>Free Fire Custom Room Roster &bull; 12 Slots Number-Wise</span>
+              </span>
+              <span className="bg-blue-600 text-white px-2.5 py-0.5 rounded-full text-[11px] font-black self-start sm:self-auto">
+                {totalTeams} / 12 SLOTS OCCUPIED
+              </span>
+            </div>
+          )}
+
+          {(viewMode === "slots" && !searchQuery.trim() && statusFilter === "all"
+            ? Array.from({ length: 12 }, (_, i) => {
+                const s = i + 1;
+                return teams.find((t) => t.slotNumber === s) || ({ isVacant: true, slotNumber: s } as any);
+              })
+            : filteredTeams
+          ).map((team) => {
+            if ((team as any).isVacant) {
+              const sNum = team.slotNumber;
+              return (
+                <div
+                  key={`vacant-${sNum}`}
+                  className="bg-slate-50 border-2 border-dashed border-slate-300 hover:border-blue-400 rounded-2xl p-6 transition flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-10 h-10 rounded-xl bg-slate-200 text-slate-600 font-black text-sm flex items-center justify-center">
+                      #{sNum}
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-base font-bold text-slate-700 uppercase">
+                          Free Fire Custom Room Slot #{sNum} &bull; Vacant
+                        </h4>
+                        <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          Open Slot
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Empty room slot waiting for 4 players
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setManualSlot(sNum);
+                      setManualError(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold uppercase bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl transition shadow-sm cursor-pointer self-start sm:self-auto"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    Assign Squad to Slot #{sNum}
+                  </button>
+                </div>
+              );
+            }
+
             const cleanPhone = (team.igl.phone || "").replace(/[^0-9]/g, "");
             const whatsappMsg = encodeURIComponent(
               `Hello ${team.igl.name}! This is Juned from PATELESP. Your squad "${team.teamName}" is assigned to SLOT #${team.slotNumber}. Here are your tournament details:`
@@ -643,6 +1074,17 @@ export default function TeamsPage({
                         Chat with IGL
                       </a>
                     )}
+
+                    {/* Move Slot Button */}
+                    <button
+                      type="button"
+                      onClick={() => { setMovingTeam(team); setTargetSlot(team.slotNumber); }}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-xl transition cursor-pointer"
+                      title="Move this squad to another custom room slot"
+                    >
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-blue-600" />
+                      Move Slot
+                    </button>
 
                     {/* Delete Full Team Button */}
                     <button
