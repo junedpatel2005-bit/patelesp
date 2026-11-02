@@ -39,6 +39,22 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
   const [tournamentTime, setTournamentTime] = useState<string>("09:00 PM IST");
   const [entryTime, setEntryTime] = useState<string>("08:45 PM IST");
 
+  // Helper to parse date string into YYYY-MM-DD for native <input type="date">
+  const parseToIso = (str: string): string => {
+    try {
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+    } catch (e) {}
+    return "2026-11-08";
+  };
+
+  const [calendarIso, setCalendarIso] = useState<string>("2026-11-08");
+
   // Payment details state
   const [paymentNumber, setPaymentNumber] = useState<string>("+919054358668");
   const [paymentName, setPaymentName] = useState<string>("Juned Rafik Patel");
@@ -68,8 +84,55 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
       setPaymentNumber(tournament.paymentNumber || "+919054358668");
       setPaymentName(tournament.paymentName || "Juned Rafik Patel");
       setHidePointsTable(tournament.hidePointsTable !== undefined ? tournament.hidePointsTable : true);
+
+      if (tournament.tournamentDate) {
+        const iso = parseToIso(tournament.tournamentDate);
+        if (iso) setCalendarIso(iso);
+      }
     }
   }, [tournament]);
+
+  // Handle calendar date picker change
+  const handleCalendarPick = (isoVal: string) => {
+    setCalendarIso(isoVal);
+    if (!isoVal) return;
+    try {
+      const [y, m, d] = isoVal.split("-").map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      if (!isNaN(dateObj.getTime())) {
+        const pretty = dateObj.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        });
+        const day = dateObj.toLocaleDateString("en-US", { weekday: "long" });
+        setTournamentDate(pretty);
+        setTournamentDay(day);
+      }
+    } catch (e) {}
+  };
+
+  // Quick Date Shortcut buttons
+  const setQuickDate = (offsetDays: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    handleCalendarPick(iso);
+  };
+
+  const setNextWeekday = (targetDayIndex: number) => {
+    const d = new Date();
+    const currentDay = d.getDay();
+    const distance = (targetDayIndex + 7 - currentDay) % 7 || 7;
+    d.setDate(d.getDate() + distance);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    handleCalendarPick(iso);
+  };
+
+  const setTimePreset = (start: string, entry: string) => {
+    setTournamentTime(start);
+    setEntryTime(entry);
+  };
 
   // Clean price input to completely prevent "040" or leading zeroes
   const handlePriceInput = (value: string, setter: (val: string) => void) => {
@@ -390,88 +453,192 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
             </div>
           </div>
 
-          {/* SECTION 2: TOURNAMENT SCHEDULE & TIMING (USER REQUIREMENT) */}
+          {/* SECTION 2: TOURNAMENT SCHEDULE & CALENDAR (USER REQUIREMENT) */}
           <div className="border-t border-slate-200 pt-6">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 mb-3">
-              <Calendar className="w-4 h-4 text-blue-600" />
-              2. Tournament Schedule &amp; Match Day (Shown on Website Before Boxes)
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <div>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  2. Tournament Schedule, Calendar &amp; Match Day
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Pick a date from the calendar below. The day of the week and display format will auto-fill automatically!
+                </p>
+              </div>
+
+              {/* Quick Date Presets */}
+              <div className="flex flex-wrap items-center gap-1.5 self-start sm:self-auto">
+                <span className="text-[11px] font-bold text-slate-400 mr-1">Quick:</span>
+                <button
+                  type="button"
+                  onClick={() => setQuickDate(0)}
+                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-[11px] font-bold text-slate-700 transition"
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickDate(1)}
+                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-[11px] font-bold text-slate-700 transition"
+                >
+                  Tomorrow
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNextWeekday(6)}
+                  className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-[11px] font-bold text-blue-700 transition"
+                >
+                  Saturday
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNextWeekday(0)}
+                  className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-[11px] font-bold text-blue-700 transition"
+                >
+                  Sunday
+                </button>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {/* Tournament Date */}
-              <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition">
+              {/* 1. INTERACTIVE CALENDAR DATE PICKER */}
+              <div className="bg-blue-50/60 border-2 border-blue-400 focus-within:border-blue-600 rounded-xl p-4 transition shadow-sm">
+                <label className="block text-xs font-black uppercase tracking-wider text-blue-900 mb-2 flex items-center justify-between">
+                  <span>Pick Date on Calendar</span>
+                  <Calendar className="w-4 h-4 text-blue-600" />
+                </label>
+                <input
+                  type="date"
+                  value={calendarIso}
+                  onChange={(e) => handleCalendarPick(e.target.value)}
+                  className="w-full bg-white border-2 border-blue-300 hover:border-blue-500 rounded-lg px-3 py-2 text-sm font-black text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-inner"
+                />
+                <p className="text-[11px] text-blue-700 mt-2 font-medium">
+                  Click to open calendar popup &amp; pick day
+                </p>
+              </div>
+
+              {/* 2. Display Formatted Date */}
+              <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition shadow-sm">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 flex items-center justify-between">
-                  <span>Tournament Date</span>
+                  <span>Formatted Date Text</span>
                   <Calendar className="w-4 h-4 text-slate-500" />
                 </label>
                 <input
                   type="text"
                   value={tournamentDate}
                   onChange={(e) => setTournamentDate(e.target.value)}
-                  placeholder="e.g. 08 November 2026"
+                  placeholder="08 November 2026"
                   required
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-[11px] text-slate-500 mt-1.5">
-                  Display format: 08 November 2026
+                <p className="text-[11px] text-slate-500 mt-2">
+                  Auto-formatted from calendar pick
                 </p>
               </div>
 
-              {/* Tournament Day */}
-              <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition">
+              {/* 3. Tournament Day */}
+              <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition shadow-sm">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 flex items-center justify-between">
                   <span>Tournament Day</span>
-                  <Sun className="w-4 h-4 text-slate-500" />
+                  <Sun className="w-4 h-4 text-amber-500" />
                 </label>
                 <input
                   type="text"
                   value={tournamentDay}
                   onChange={(e) => setTournamentDay(e.target.value)}
-                  placeholder="e.g. Sunday"
+                  placeholder="Sunday"
                   required
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-[11px] text-slate-500 mt-1.5">
-                  e.g. Sunday, Saturday, Friday
+                <p className="text-[11px] text-slate-500 mt-2">
+                  Auto-detected: <strong className="text-slate-700">{tournamentDay}</strong>
                 </p>
               </div>
 
-              {/* Tournament Start Time */}
-              <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition">
+              {/* 4. Match Start & Room Entry Timing */}
+              <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition shadow-sm">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 flex items-center justify-between">
-                  <span>Tournament Start Time</span>
+                  <span>Start &amp; Entry Timing</span>
                   <Clock className="w-4 h-4 text-slate-500" />
                 </label>
-                <input
-                  type="text"
-                  value={tournamentTime}
-                  onChange={(e) => setTournamentTime(e.target.value)}
-                  placeholder="e.g. 09:00 PM IST"
-                  required
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-[11px] text-slate-500 mt-1.5">
-                  Official match start time
-                </p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase w-12 shrink-0">Match:</span>
+                    <input
+                      type="text"
+                      value={tournamentTime}
+                      onChange={(e) => setTournamentTime(e.target.value)}
+                      placeholder="09:00 PM IST"
+                      required
+                      className="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-black text-slate-900 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-red-500 uppercase w-12 shrink-0">Entry:</span>
+                    <input
+                      type="text"
+                      value={entryTime}
+                      onChange={(e) => setEntryTime(e.target.value)}
+                      placeholder="08:45 PM IST"
+                      required
+                      className="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-black text-red-600 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setTimePreset("09:00 PM IST", "08:45 PM IST")}
+                    className="text-[10px] font-bold bg-slate-200 hover:bg-slate-300 px-1.5 py-0.5 rounded text-slate-700"
+                  >
+                    9:00 (Entry 8:45)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTimePreset("08:30 PM IST", "08:15 PM IST")}
+                    className="text-[10px] font-bold bg-slate-200 hover:bg-slate-300 px-1.5 py-0.5 rounded text-slate-700"
+                  >
+                    8:30 (Entry 8:15)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTimePreset("08:00 PM IST", "07:45 PM IST")}
+                    className="text-[10px] font-bold bg-slate-200 hover:bg-slate-300 px-1.5 py-0.5 rounded text-slate-700"
+                  >
+                    8:00 (Entry 7:45)
+                  </button>
+                </div>
               </div>
+            </div>
 
-              {/* Room Entry Time */}
-              <div className="bg-slate-50 border-2 border-slate-200 focus-within:border-blue-600 rounded-xl p-4 transition">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 flex items-center justify-between">
-                  <span>Room Entry Closes Time</span>
-                  <Clock className="w-4 h-4 text-red-500" />
-                </label>
-                <input
-                  type="text"
-                  value={entryTime}
-                  onChange={(e) => setEntryTime(e.target.value)}
-                  placeholder="e.g. 08:45 PM IST"
-                  required
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-[11px] text-red-600 mt-1.5 font-bold">
-                  Strict lobby entry deadline
-                </p>
+            {/* LIVE PREVIEW OF WEBSITE SCHEDULE BANNER */}
+            <div className="mt-4 p-4 rounded-xl bg-slate-900 border border-slate-800 text-white shadow-inner">
+              <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-800">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Website Schedule Preview (Banner Before 4 Prize Boxes)
+                </span>
+                <span className="text-[10px] uppercase font-bold text-blue-400 bg-blue-950 px-2 py-0.5 rounded border border-blue-800">
+                  Real-time Preview
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                <div>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold block">Tournament Date:</span>
+                  <span className="font-black text-white text-sm">{tournamentDate}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold block">Tournament Day:</span>
+                  <span className="font-black text-red-500 text-sm uppercase">{tournamentDay}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold block">Match &amp; Entry Time:</span>
+                  <span className="font-black text-white text-sm">{tournamentTime}</span>{" "}
+                  <span className="text-[10px] bg-red-950 border border-red-700 text-yellow-300 px-1.5 py-0.5 rounded font-bold">
+                    Entry: {entryTime}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
