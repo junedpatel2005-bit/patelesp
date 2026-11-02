@@ -3,10 +3,9 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 export const DEFAULT_URL = "https://qintzlgeicjemcprkwtl.supabase.co";
 export const DEFAULT_ANON_KEY = "sb_publishable_RkDpl3PcFFXXXoz46662Ag_ZUtV-pXH";
 
-const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 export const supabaseUrl =
-  rawUrl && rawUrl.startsWith("http") && !rawUrl.includes("bxbdjdlpfjicntwmltii")
-    ? rawUrl
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith("http")
+    ? process.env.NEXT_PUBLIC_SUPABASE_URL
     : DEFAULT_URL;
 
 export const supabaseAnonKey =
