@@ -59,11 +59,14 @@ export default function TeamsPage({
 
   // 1. Delete Full Team
   const handleDeleteFullTeam = async (teamId: string, teamName: string, slotNumber: number) => {
-    if (
-      !confirm(
-        `Are you sure you want to remove the FULL TEAM "${teamName}" from Slot #${slotNumber}? This will free up Slot #${slotNumber} for a new squad.`
-      )
-    ) {
+    const shouldDelete =
+      typeof window !== "undefined"
+        ? window.confirm(
+            `Are you sure you want to remove the FULL TEAM "${teamName}" from Slot #${slotNumber}? This will free up Slot #${slotNumber} for a new squad.`
+          )
+        : true;
+
+    if (!shouldDelete) {
       return;
     }
 
@@ -71,17 +74,26 @@ export default function TeamsPage({
     setActionMessage(null);
 
     try {
-      const res = await fetch(`/api/teams?teamId=${teamId}`, { method: "DELETE" });
+      const res = await fetch(
+        `/api/teams?teamId=${encodeURIComponent(teamId)}&slot=${slotNumber}`,
+        {
+          method: "DELETE",
+          headers: { "Cache-Control": "no-cache" },
+        }
+      );
       const data = await res.json();
       if (res.ok && data.success) {
         onTeamDeleted(teamId);
-        setActionMessage(`Full team "${teamName}" deleted successfully. Slot #${slotNumber} is now free!`);
+        onRefresh();
+        setActionMessage(
+          `Full team "${teamName}" deleted successfully. Slot #${slotNumber} is now free!`
+        );
         setTimeout(() => setActionMessage(null), 4000);
       } else {
         alert(data.message || "Failed to delete team");
       }
     } catch (e) {
-      alert("Error deleting team");
+      alert("Error deleting team. Please check internet connection.");
     } finally {
       setDeletingId(null);
     }

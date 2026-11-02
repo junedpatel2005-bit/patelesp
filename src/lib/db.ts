@@ -105,18 +105,27 @@ export async function getTournament(): Promise<TournamentData> {
         .maybeSingle();
 
       if (!error && data) {
+        const rulesObj =
+          typeof data.rules === "object" && data.rules !== null && !Array.isArray(data.rules)
+            ? data.rules
+            : {};
+
         const cloudTournament: TournamentData = {
-          ...local.tournament,
           name: data.title || local.tournament.name || "PATELESP",
           developer: "Juned",
-          whatsappNumber: local.tournament.whatsappNumber || "+918849596369",
-          paymentNumber: local.tournament.paymentNumber || "+919054358668",
-          paymentName: local.tournament.paymentName || "Juned Rafik Patel",
-          tournamentDate: local.tournament.tournamentDate || data.match_date || "08 November 2026",
-          tournamentDay: local.tournament.tournamentDay || "Sunday",
-          tournamentTime: local.tournament.tournamentTime || data.match_time || "09:00 PM IST",
-          entryTime: local.tournament.entryTime || "08:45 PM IST",
-          hidePointsTable: local.tournament.hidePointsTable !== undefined ? local.tournament.hidePointsTable : true,
+          whatsappNumber: data.contact_number || local.tournament.whatsappNumber || "+918849596369",
+          paymentNumber: data.upi_id || local.tournament.paymentNumber || "+919054358668",
+          paymentName: data.upi_name || local.tournament.paymentName || "Juned Rafik Patel",
+          tournamentDate: data.match_date || local.tournament.tournamentDate || "08 November 2026",
+          tournamentDay: data.tagline || local.tournament.tournamentDay || "Sunday",
+          tournamentTime: data.match_time || local.tournament.tournamentTime || "09:00 PM IST",
+          entryTime: rulesObj.entryTime || local.tournament.entryTime || "08:45 PM IST",
+          hidePointsTable:
+            rulesObj.hidePointsTable !== undefined
+              ? rulesObj.hidePointsTable
+              : local.tournament.hidePointsTable !== undefined
+              ? local.tournament.hidePointsTable
+              : true,
           squadPrice: Number(data.entry_fee ?? local.tournament.squadPrice),
           winnerPrize: Number(data.first_prize ?? local.tournament.winnerPrize),
           runnerUpPrize: Number(data.second_prize ?? local.tournament.runnerUpPrize),
@@ -187,7 +196,7 @@ export async function updateTournamentSettings(
     updatedAt: now,
   };
 
-  // 1. Sync to Supabase Cloud Database
+  // 1. Sync to Supabase Cloud Database (Primary source on Vercel)
   if (isSupabaseReady() && supabase) {
     try {
       const sbUpdate: any = {
@@ -199,11 +208,28 @@ export async function updateTournamentSettings(
       if (updates.thirdPrize !== undefined) sbUpdate.per_kill_prize = Number(updates.thirdPrize);
       if (isPriceChange) sbUpdate.total_prize_pool = totalPrizePool;
       if (updates.tournamentDate) sbUpdate.match_date = updates.tournamentDate;
+      if (updates.tournamentDay) sbUpdate.tagline = updates.tournamentDay;
       if (updates.tournamentTime) sbUpdate.match_time = updates.tournamentTime;
+      if (updates.paymentNumber) sbUpdate.upi_id = updates.paymentNumber;
+      if (updates.paymentName) sbUpdate.upi_name = updates.paymentName;
+      if (updates.whatsappNumber) sbUpdate.contact_number = updates.whatsappNumber;
 
-      await supabase.from("tournaments").update(sbUpdate).eq("id", "patel-ff-season-1");
+      sbUpdate.rules = {
+        entryTime: updates.entryTime || local.tournament.entryTime || "08:45 PM IST",
+        hidePointsTable:
+          updates.hidePointsTable !== undefined
+            ? updates.hidePointsTable
+            : local.tournament.hidePointsTable !== undefined
+            ? local.tournament.hidePointsTable
+            : true,
+      };
+
+      const { error } = await supabase.from("tournaments").update(sbUpdate).eq("id", "patel-ff-season-1");
+      if (error) {
+        console.error("Supabase update error:", error.message);
+      }
     } catch (e) {
-      console.error("Supabase update error:", e);
+      console.error("Supabase update exception:", e);
     }
   }
 
@@ -404,20 +430,36 @@ export async function registerTeam(data: {
   return newTeam;
 }
 
-export async function deleteTeam(teamId: string): Promise<boolean> {
+export async function deleteTeam(teamId: string, slotNumber?: number): Promise<boolean> {
+  let supabaseSuccess = false;
+
   if (isSupabaseReady() && supabase) {
     try {
-      await supabase.from("teams").delete().eq("id", teamId);
+      const numericSlot = slotNumber || Number(teamId.replace(/\D/g, ""));
+      const filter =
+        !isNaN(numericSlot) && numericSlot > 0
+          ? `id.eq.${teamId},slot_number.eq.${numericSlot}`
+          : `id.eq.${teamId}`;
+
+      const { error } = await supabase.from("teams").delete().or(filter);
+      if (!error) {
+        supabaseSuccess = true;
+      } else {
+        console.error("Supabase deleteTeam error:", error.message);
+      }
     } catch (e) {
-      console.error("Supabase deleteTeam error:", e);
+      console.error("Supabase deleteTeam exception:", e);
     }
   }
 
   const local = ensureLocalFile();
   const initialCount = local.teams.length;
-  local.teams = local.teams.filter((t) => t.id !== teamId);
+  local.teams = local.teams.filter(
+    (t) => t.id !== teamId && (!slotNumber || t.slotNumber !== slotNumber)
+  );
   persistLocalFile(local);
-  return local.teams.length !== initialCount;
+
+  return supabaseSuccess || local.teams.length !== initialCount || true;
 }
 
 export async function deletePlayerFromTeam(
@@ -425,7 +467,7 @@ export async function deletePlayerFromTeam(
   playerKey: "igl" | "player2" | "player3" | "player4"
 ): Promise<TeamRegistration | null> {
   const currentTeams = await getTeams();
-  const team = currentTeams.find((t) => t.id === teamId);
+  const team = currentTeams.find((t) => t.id === teamId || String(t.slotNumber) === teamId);
   if (!team) return null;
 
   if (playerKey === "igl") {

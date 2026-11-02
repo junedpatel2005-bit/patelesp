@@ -163,8 +163,10 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
     fetchHistory();
   }, []);
 
-  const handleSaveAll = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveAll = async (e?: any) => {
+    if (e && typeof e.preventDefault === "function") {
+      e.preventDefault();
+    }
     setSaving(true);
     setSaveSuccess(false);
     setSaveError(null);

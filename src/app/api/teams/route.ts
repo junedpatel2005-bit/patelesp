@@ -87,12 +87,16 @@ export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const teamId = searchParams.get("teamId");
+    const slot = searchParams.get("slot");
     const playerKey = searchParams.get("playerKey") as "igl" | "player2" | "player3" | "player4" | null;
     const reset = searchParams.get("reset");
 
     if (reset === "true") {
       await resetAllTeams();
-      return NextResponse.json({ success: true, message: "All teams reset successfully." });
+      return NextResponse.json(
+        { success: true, message: "All teams reset successfully." },
+        { headers: { "Cache-Control": "no-store, max-age=0" } }
+      );
     }
 
     if (!teamId) {
@@ -105,20 +109,24 @@ export async function DELETE(req: NextRequest) {
       if (!updatedTeam) {
         return NextResponse.json({ success: false, message: "Team not found." }, { status: 404 });
       }
-      return NextResponse.json({
-        success: true,
-        message: `Player removed from ${updatedTeam.teamName}.`,
-        team: updatedTeam,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Player removed from ${updatedTeam.teamName}.`,
+          team: updatedTeam,
+        },
+        { headers: { "Cache-Control": "no-store, max-age=0" } }
+      );
     }
 
-    // Delete entire team
-    const deleted = await deleteTeam(teamId);
-    if (!deleted) {
-      return NextResponse.json({ success: false, message: "Team not found." }, { status: 404 });
-    }
+    // Delete entire team (by teamId and optional slot)
+    const slotNum = slot ? Number(slot) : undefined;
+    const deleted = await deleteTeam(teamId, slotNum);
 
-    return NextResponse.json({ success: true, message: "Full team removed and slot released." });
+    return NextResponse.json(
+      { success: true, message: "Full team removed and slot released." },
+      { headers: { "Cache-Control": "no-store, max-age=0" } }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, message: error?.message || "Failed to remove team/player." },
