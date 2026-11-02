@@ -43,7 +43,7 @@ export default function FreeFireRules({ tournament }: FreeFireRulesProps) {
           </p>
         </div>
 
-        {/* 4 Core Rule Cards */}
+        {/* 5 Core Rule Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           {/* Rule 1: Squad & Devices */}
           <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-6 hover:border-red-600/60 transition">
@@ -122,6 +122,33 @@ export default function FreeFireRules({ tournament }: FreeFireRulesProps) {
               <li>The winning team IGL must take a clear screenshot of the end-game Booyah scoreboard showing kills and placements.</li>
               <li>Submit the screenshot to Admin Juned on WhatsApp within 10 minutes of match completion.</li>
               <li>Cash prizes (1st, 2nd, and 3rd place) are transferred directly via UPI to the IGL within 30 minutes of verification.</li>
+            </ul>
+          </div>
+
+          {/* Rule 5: MONEY NON-REFUNDABLE (MANDATORY RULE) */}
+          <div className="md:col-span-2 bg-gradient-to-r from-red-950/80 via-black to-red-950/80 border-2 border-red-600 rounded-xl p-6 shadow-[0_0_25px_rgba(239,68,68,0.3)]">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-lg bg-red-600 text-white flex items-center justify-center shadow">
+                <Award className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-black text-white uppercase flex items-center gap-2">
+                5. Entry Fee &amp; Refund Policy
+                <span className="text-[10px] bg-red-600 text-white px-2.5 py-0.5 rounded font-black uppercase tracking-wider">
+                  MONEY STRICTLY NON-REFUNDABLE
+                </span>
+              </h3>
+            </div>
+            <ul className="text-xs text-gray-200 space-y-2 list-disc list-inside">
+              <li>
+                <strong className="text-yellow-300 font-bold">100% Non-Refundable:</strong> Once paid and slot is confirmed, the entry fee cannot be refunded or transferred under any circumstance.
+              </li>
+              <li>
+                <strong className="text-red-400 font-bold">No Late Arrival Refunds:</strong> If your team fails to enter the custom room by 8:45 PM or misses the 9:00 PM match start, no refund will be provided.
+              </li>
+              <li>
+                <strong className="text-red-400 font-bold">No Disqualification Refunds:</strong> Teams caught using PC emulators, third-party hacks, or violating esports rules will be disqualified immediately with zero refund.
+              </li>
+              <li>By registering and paying the entry fee, all squad members agree unconditionally to this non-refundable policy.</li>
             </ul>
           </div>
         </div>

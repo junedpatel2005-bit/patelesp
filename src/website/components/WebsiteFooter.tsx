@@ -109,11 +109,16 @@ export default function WebsiteFooter() {
               </p>
             </div>
 
-            {/* Required Note: Only msg, do not call */}
-            <div className="flex items-start gap-2 bg-red-950/40 border border-red-800/40 rounded-lg p-2.5">
-              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-[11px] font-bold text-red-300">
-                Note: Only message, do not call.
+            {/* Required Note: Only msg, do not call & Non-refundable */}
+            <div className="flex flex-col gap-1.5 bg-red-950/40 border border-red-800/40 rounded-lg p-2.5">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-[11px] font-bold text-red-300">
+                  Note: Only message, do not call.
+                </p>
+              </div>
+              <p className="text-[10px] font-bold text-yellow-400 pl-6">
+                * Tournament entry fee is strictly NON-REFUNDABLE.
               </p>
             </div>
           </div>

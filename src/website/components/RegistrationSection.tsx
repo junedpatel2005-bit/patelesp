@@ -513,7 +513,16 @@ export default function RegistrationSection({
                   </div>
                 </div>
               </div>
-              <p className="text-[11px] text-gray-400 mt-3">
+              <div className="mt-3 bg-red-950/60 border border-red-800/60 rounded-lg p-2.5 flex items-center gap-2">
+                <span className="text-[10px] bg-red-600 text-white font-black uppercase px-2 py-0.5 rounded shrink-0">
+                  MANDATORY
+                </span>
+                <p className="text-[11px] font-bold text-red-200">
+                  Tournament entry fee is 100% strictly NON-REFUNDABLE under any circumstance.
+                </p>
+              </div>
+
+              <p className="text-[11px] text-gray-400 mt-2">
                 * After submitting your squad registration below, please send the payment screenshot to Juned on WhatsApp to activate your slot.
               </p>
             </div>
@@ -535,7 +544,7 @@ export default function RegistrationSection({
                 )}
               </button>
               <p className="text-center text-[11px] text-gray-400 mt-3">
-                By registering, you agree to official Free Fire tournament rules and fair play guidelines.
+                By registering, you agree to official Free Fire tournament rules and fair play guidelines. Money is strictly non-refundable.
               </p>
             </div>
           </form>
