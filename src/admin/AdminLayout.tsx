@@ -185,9 +185,15 @@ export default function AdminLayout() {
       const data = await res.json();
       if (res.ok && data.success) {
         setTeams([]);
+        if (data.tournament) {
+          setTournament(data.tournament);
+        }
+        try {
+          localStorage.setItem("patelesp_price_sync", Date.now().toString());
+        } catch (e) {}
         setShowCompleteConfirm(false);
         setCompleteMessage(
-          "🏆 Tournament marked as COMPLETED! All 12 squad slots, players, and payment records have been reset for the next season."
+          "🏆 Tournament marked as COMPLETED! All 12 squad slots, players, payment records, and room credentials have been reset."
         );
         setTimeout(() => setCompleteMessage(null), 6000);
         fetchData();

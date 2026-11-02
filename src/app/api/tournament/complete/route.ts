@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resetAllTeams, getTournament } from "@/lib/db";
+import { resetAllTeams, updateTournamentSettings, getTournament } from "@/lib/db";
 import { broadcastTeamsReset, broadcastTournamentUpdated } from "@/lib/socket-server";
 
 export const dynamic = "force-dynamic";
@@ -7,12 +7,20 @@ export const revalidate = 0;
 
 export async function POST() {
   try {
-    // Reset all teams and slots from both Supabase and local DB
+    // 1. Reset all teams and slots from both Supabase and local DB
     await resetAllTeams();
 
-    const tournament = await getTournament();
+    // 2. Clear room credentials and set room not live for next match
+    const updateResult = await updateTournamentSettings({
+      roomId: "",
+      roomPassword: "",
+      isRoomLive: false,
+      note: "Tournament concluded & reset for next season",
+    });
 
-    // Broadcast real-time Socket.IO events to all clients
+    const tournament = updateResult.tournament || (await getTournament());
+
+    // 3. Broadcast real-time Socket.IO events to all connected clients
     try {
       broadcastTeamsReset();
       broadcastTournamentUpdated(tournament);
@@ -22,7 +30,8 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
-      message: "Tournament marked as COMPLETED! All 12 squad slots and payments reset for the next tournament.",
+      message:
+        "Tournament concluded successfully! All 12 squad slots, players, payments, and room credentials have been reset.",
       tournament,
       teams: [],
     });
