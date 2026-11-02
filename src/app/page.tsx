@@ -47,8 +47,8 @@ export default function HomePage() {
   useEffect(() => {
     fetchData();
 
-    // Live auto-refresh every 3 seconds to reflect admin price changes in real-time
-    const interval = setInterval(fetchData, 3000);
+    // Live auto-refresh every 2 seconds to reflect admin price changes in real-time
+    const interval = setInterval(fetchData, 2000);
 
     // Refresh immediately when tab gains focus
     const handleVisibility = () => {
@@ -56,13 +56,23 @@ export default function HomePage() {
         fetchData();
       }
     };
+
+    // Instant cross-tab sync when admin saves prices
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "patelesp_price_sync") {
+        fetchData();
+      }
+    };
+
     window.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("focus", fetchData);
+    window.addEventListener("storage", handleStorage);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("focus", fetchData);
+      window.removeEventListener("storage", handleStorage);
     };
   }, [fetchData]);
 
@@ -80,6 +90,7 @@ export default function HomePage() {
       <RegistrationSection
         teamsCount={teams.length}
         maxTeams={tournament?.maxTeams ?? 12}
+        tournament={tournament}
         onRegistered={handleNewTeamRegistered}
       />
 
@@ -87,7 +98,7 @@ export default function HomePage() {
       <AboutSection />
 
       {/* Official Free Fire Esports Rules */}
-      <FreeFireRules />
+      <FreeFireRules tournament={tournament} />
     </WebsiteLayout>
   );
 }

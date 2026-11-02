@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Trophy, Medal, Award, DollarSign } from "lucide-react";
+import { Trophy, Medal, Award, DollarSign, Calendar, Clock, Sun } from "lucide-react";
 import { TournamentData } from "@/lib/types";
 
 interface HeroPrizeBoxesProps {
@@ -16,6 +16,11 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
   const thirdPrize = tournament?.thirdPrize ?? 250;
   const totalPrizePool = Number(winnerPrize) + Number(runnerUpPrize) + Number(thirdPrize);
 
+  const tournamentDate = tournament?.tournamentDate || "08 November 2026";
+  const tournamentDay = tournament?.tournamentDay || "Sunday";
+  const tournamentTime = tournament?.tournamentTime || "09:00 PM IST";
+  const entryTime = tournament?.entryTime || "08:45 PM IST";
+
   return (
     <section className="relative pt-12 pb-16 overflow-hidden bg-gradient-to-b from-black via-zinc-950 to-black">
       {/* Background Red Glow Elements */}
@@ -23,7 +28,7 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Creator & Subtitle Banner */}
-        <div className="text-center max-w-3xl mx-auto mb-10">
+        <div className="text-center max-w-3xl mx-auto mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-950/60 border border-red-600/40 text-red-400 text-xs sm:text-sm font-semibold tracking-wider uppercase mb-4 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
             Official Free Fire Squad Battle Royale
@@ -45,6 +50,61 @@ export default function HeroPrizeBoxes({ tournament, loading }: HeroPrizeBoxesPr
 
           <div className="mt-4 flex items-center justify-center gap-4 text-xs sm:text-sm font-bold text-gray-300">
             <span className="text-red-500 font-black">●</span> TOTAL PRIZE POOL: <span className="text-white text-base font-black">₹{totalPrizePool.toLocaleString()}</span>
+          </div>
+        </div>
+
+        {/* AFTER HEADER BEFORE BOX: TOURNAMENT DATE, TIME, & DAY (ADMIN CONFIGURABLE) */}
+        <div className="mb-10 max-w-4xl mx-auto bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border-2 border-red-600/60 hover:border-red-500 rounded-2xl p-5 sm:p-6 shadow-[0_0_30px_rgba(239,68,68,0.25)] transition">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
+            {/* 1. Date */}
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-red-600/20 border border-red-500/50 flex items-center justify-center text-red-500 shrink-0 shadow-inner">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">
+                  Tournament Date
+                </span>
+                <span className="text-base sm:text-lg font-black text-white tracking-wide">
+                  {tournamentDate}
+                </span>
+              </div>
+            </div>
+
+            {/* 2. Day */}
+            <div className="flex items-center gap-3.5 md:border-l md:border-zinc-800 md:pl-5">
+              <div className="w-12 h-12 rounded-xl bg-red-600/20 border border-red-500/50 flex items-center justify-center text-red-500 shrink-0 shadow-inner">
+                <Sun className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">
+                  Tournament Day
+                </span>
+                <span className="text-base sm:text-lg font-black text-red-500 uppercase tracking-wide">
+                  {tournamentDay}
+                </span>
+              </div>
+            </div>
+
+            {/* 3. Time (Entry & Match) */}
+            <div className="flex items-center gap-3.5 md:border-l md:border-zinc-800 md:pl-5">
+              <div className="w-12 h-12 rounded-xl bg-red-600/20 border border-red-500/50 flex items-center justify-center text-red-500 shrink-0 shadow-inner">
+                <Clock className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">
+                  Match &amp; Entry Time
+                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-base sm:text-lg font-black text-white">
+                    {tournamentTime}
+                  </span>
+                  <span className="bg-red-950 border border-red-600/80 text-yellow-300 text-[10px] font-black uppercase px-2 py-0.5 rounded">
+                    Entry: {entryTime}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -8,12 +8,14 @@ import { TeamRegistration } from "@/lib/types";
 interface RegistrationSectionProps {
   teamsCount: number;
   maxTeams: number;
+  tournament?: any;
   onRegistered: (team: TeamRegistration) => void;
 }
 
 export default function RegistrationSection({
   teamsCount,
   maxTeams = 12,
+  tournament,
   onRegistered,
 }: RegistrationSectionProps) {
   const isFull = teamsCount >= maxTeams;
@@ -186,24 +188,69 @@ export default function RegistrationSection({
           >
             {/* Success Modal / Banner */}
             {successTeam && (
-              <div className="mb-8 bg-black border-2 border-red-500 rounded-xl p-6 text-center shadow-[0_0_30px_rgba(239,68,68,0.4)]">
-                <CheckCircle2 className="w-12 h-12 text-red-500 mx-auto mb-2" />
-                <h4 className="text-xl font-black text-white uppercase">
+              <div className="mb-8 bg-zinc-950 border-2 border-red-500 rounded-xl p-6 text-center shadow-[0_0_30px_rgba(239,68,68,0.4)]">
+                <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-2" />
+                <h4 className="text-xl sm:text-2xl font-black text-white uppercase">
                   Squad Registered Successfully!
                 </h4>
                 <p className="text-sm text-gray-300 mt-1">
                   Team <span className="text-red-400 font-bold">{successTeam.teamName}</span> has secured{" "}
-                  <span className="bg-red-600 text-white font-extrabold px-2 py-0.5 rounded ml-1">
+                  <span className="bg-red-600 text-white font-extrabold px-2.5 py-0.5 rounded ml-1">
                     SLOT #{successTeam.slotNumber}
                   </span>
                 </p>
-                <div className="mt-4 flex justify-center gap-4">
+
+                {/* Next Step Payment Notice */}
+                <div className="mt-5 p-4 rounded-xl bg-black border border-red-600/50 text-left max-w-lg mx-auto">
+                  <div className="flex items-center justify-between mb-2 pb-2 border-b border-zinc-800">
+                    <span className="text-xs font-black uppercase text-yellow-400 tracking-wider">
+                      ⚠️ Final Step to Confirm Slot
+                    </span>
+                    <span className="text-xs font-bold text-white bg-red-600/60 px-2 py-0.5 rounded">
+                      Fee: ₹{tournament?.squadPrice ?? 150}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-300 mb-2">
+                    Pay the squad entry fee to complete slot verification:
+                  </p>
+                  <div className="bg-zinc-900 p-2.5 rounded-lg text-xs space-y-1 font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Payment Number:</span>
+                      <strong className="text-white text-sm">
+                        {tournament?.paymentNumber || "+919054358668"}
+                      </strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Name:</span>
+                      <strong className="text-red-400 font-bold">
+                        {tournament?.paymentName || "Juned Rafik Patel"}
+                      </strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">App:</span>
+                      <span className="text-gray-300">GPay / PhonePe / Paytm / UPI</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  <a
+                    href={`https://wa.me/918849596369?text=${encodeURIComponent(
+                      `Hello Juned, I have registered squad "${successTeam.teamName}" for Slot #${successTeam.slotNumber}. Here is my payment screenshot for the entry fee.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs uppercase font-black bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition shadow-md"
+                  >
+                    <span>Send Screenshot on WhatsApp</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+
                   <Link
                     href="/participate"
-                    className="text-xs uppercase font-extrabold bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition"
+                    className="text-xs uppercase font-extrabold bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition"
                   >
                     View Slot in Participate List
-                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
@@ -425,6 +472,50 @@ export default function RegistrationSection({
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* 3. OFFICIAL ENTRY FEE PAYMENT BOX */}
+            <div className="mt-8 bg-zinc-900/90 border-2 border-red-600/70 rounded-xl p-5 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-red-600/20 border border-red-500 flex items-center justify-center text-red-500 font-bold text-sm">
+                    ₹
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider">
+                      3. Official Tournament Entry Fee Payment
+                    </h4>
+                    <p className="text-[11px] text-gray-400">
+                      Pay via Google Pay / PhonePe / Paytm / BHIM UPI to confirm slot
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-red-600 text-white font-black text-xs uppercase px-3 py-1 rounded">
+                  Fee: ₹{tournament?.squadPrice ?? 150} / Squad
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-black border border-zinc-800 p-3.5 rounded-lg text-xs">
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-[10px] block">
+                    Payment Mobile Number:
+                  </span>
+                  <div className="text-base font-black text-white tracking-wider text-glow-red mt-0.5">
+                    {tournament?.paymentNumber || "+919054358668"}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-[10px] block">
+                    Payee Account Name:
+                  </span>
+                  <div className="text-sm font-black text-red-400 uppercase mt-0.5">
+                    {tournament?.paymentName || "Juned Rafik Patel"}
+                  </div>
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-400 mt-3">
+                * After submitting your squad registration below, please send the payment screenshot to Juned on WhatsApp to activate your slot.
+              </p>
             </div>
 
             {/* SUBMIT BUTTON */}

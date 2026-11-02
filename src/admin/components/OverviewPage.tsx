@@ -183,12 +183,22 @@ export default function OverviewPage({
               <span className="font-bold text-slate-900">{tournament?.name || "PATELESP"}</span>
             </div>
             <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-              <span className="font-semibold text-slate-600">Organizer / Creator</span>
-              <span className="font-bold text-slate-900">{tournament?.developer || "Juned"}</span>
+              <span className="font-semibold text-slate-600">Match Day &amp; Date</span>
+              <span className="font-bold text-blue-600">
+                {tournament?.tournamentDay || "Sunday"}, {tournament?.tournamentDate || "08 November 2026"}
+              </span>
             </div>
             <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-              <span className="font-semibold text-slate-600">Official WhatsApp</span>
-              <span className="font-bold text-blue-600">{tournament?.whatsappNumber || "+918849596369"}</span>
+              <span className="font-semibold text-slate-600">Match &amp; Entry Time</span>
+              <span className="font-bold text-slate-900">
+                Start: {tournament?.tournamentTime || "09:00 PM"} (Entry: {tournament?.entryTime || "08:45 PM"})
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+              <span className="font-semibold text-slate-600">Official Payment Mobile</span>
+              <span className="font-bold text-emerald-600">
+                {tournament?.paymentNumber || "+919054358668"} ({tournament?.paymentName || "Juned Rafik Patel"})
+              </span>
             </div>
           </div>
 

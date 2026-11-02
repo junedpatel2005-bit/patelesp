@@ -57,12 +57,12 @@ export default function AboutSection() {
             </div>
 
             <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-              Official automated UPI QR Code integration is currently queued for the upcoming version. In the meantime, entry fee confirmations and custom room access are verified manually by Admin via WhatsApp.
+              Official entry fee payments are accepted via GPay / PhonePe / Paytm / UPI to <strong className="text-white">+91 90543 58668</strong> (<strong className="text-red-400">Juned Rafik Patel</strong>). Confirmations and custom room access are verified directly by Admin Juned via WhatsApp.
             </p>
 
-            <div className="mt-5 bg-zinc-950 border border-zinc-800 rounded-xl p-3 flex items-center justify-between text-xs">
-              <span className="text-gray-400">Assistance &amp; Verification:</span>
-              <span className="text-red-500 font-bold">+91 8849596369</span>
+            <div className="mt-5 bg-zinc-950 border border-zinc-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="text-gray-400">Payment: <strong className="text-white">+91 90543 58668</strong> (Juned Rafik Patel)</span>
+              <span className="text-red-500 font-bold">WhatsApp: +91 8849596369</span>
             </div>
           </div>
         </div>

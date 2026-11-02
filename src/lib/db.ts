@@ -10,6 +10,13 @@ const defaultTournament: TournamentData = {
   name: "PATELESP",
   developer: "Juned",
   whatsappNumber: "+918849596369",
+  paymentNumber: "+919054358668",
+  paymentName: "Juned Rafik Patel",
+  tournamentDate: "08 November 2026",
+  tournamentDay: "Sunday",
+  tournamentTime: "09:00 PM IST",
+  entryTime: "08:45 PM IST",
+  hidePointsTable: true,
   squadPrice: 100,
   winnerPrize: 1000,
   runnerUpPrize: 500,
@@ -99,9 +106,17 @@ export async function getTournament(): Promise<TournamentData> {
 
       if (!error && data) {
         const cloudTournament: TournamentData = {
-          name: data.title || "PATELESP",
+          ...local.tournament,
+          name: data.title || local.tournament.name || "PATELESP",
           developer: "Juned",
-          whatsappNumber: data.contact_number || "+918849596369",
+          whatsappNumber: local.tournament.whatsappNumber || "+918849596369",
+          paymentNumber: local.tournament.paymentNumber || "+919054358668",
+          paymentName: local.tournament.paymentName || "Juned Rafik Patel",
+          tournamentDate: local.tournament.tournamentDate || data.match_date || "08 November 2026",
+          tournamentDay: local.tournament.tournamentDay || "Sunday",
+          tournamentTime: local.tournament.tournamentTime || data.match_time || "09:00 PM IST",
+          entryTime: local.tournament.entryTime || "08:45 PM IST",
+          hidePointsTable: local.tournament.hidePointsTable !== undefined ? local.tournament.hidePointsTable : true,
           squadPrice: Number(data.entry_fee ?? local.tournament.squadPrice),
           winnerPrize: Number(data.first_prize ?? local.tournament.winnerPrize),
           runnerUpPrize: Number(data.second_prize ?? local.tournament.runnerUpPrize),
@@ -124,6 +139,87 @@ export async function getTournament(): Promise<TournamentData> {
   return local.tournament;
 }
 
+export async function updateTournamentSettings(
+  updates: Partial<TournamentData> & { note?: string }
+): Promise<{ tournament: TournamentData; history?: PriceHistoryRecord }> {
+  const local = ensureLocalFile();
+  const now = new Date().toISOString();
+
+  let newHistoryRecord: PriceHistoryRecord | undefined;
+
+  const isPriceChange =
+    updates.squadPrice !== undefined ||
+    updates.winnerPrize !== undefined ||
+    updates.runnerUpPrize !== undefined ||
+    updates.thirdPrize !== undefined;
+
+  const squadPrice =
+    updates.squadPrice !== undefined ? Number(updates.squadPrice) : local.tournament.squadPrice;
+  const winnerPrize =
+    updates.winnerPrize !== undefined ? Number(updates.winnerPrize) : local.tournament.winnerPrize;
+  const runnerUpPrize =
+    updates.runnerUpPrize !== undefined ? Number(updates.runnerUpPrize) : local.tournament.runnerUpPrize;
+  const thirdPrize =
+    updates.thirdPrize !== undefined ? Number(updates.thirdPrize) : local.tournament.thirdPrize;
+  const totalPrizePool = Number(winnerPrize) + Number(runnerUpPrize) + Number(thirdPrize);
+
+  if (isPriceChange) {
+    newHistoryRecord = {
+      id: `ph-${Date.now()}`,
+      timestamp: now,
+      squadPrice,
+      winnerPrize,
+      runnerUpPrize,
+      thirdPrize,
+      totalPrizePool,
+      updatedBy: "Admin",
+      note: updates.note || "Tournament settings & prizes updated",
+    };
+  }
+
+  const updatedTournament: TournamentData = {
+    ...local.tournament,
+    ...updates,
+    squadPrice,
+    winnerPrize,
+    runnerUpPrize,
+    thirdPrize,
+    updatedAt: now,
+  };
+
+  // 1. Sync to Supabase Cloud Database
+  if (isSupabaseReady() && supabase) {
+    try {
+      const sbUpdate: any = {
+        updated_at: now,
+      };
+      if (updates.squadPrice !== undefined) sbUpdate.entry_fee = Number(updates.squadPrice);
+      if (updates.winnerPrize !== undefined) sbUpdate.first_prize = Number(updates.winnerPrize);
+      if (updates.runnerUpPrize !== undefined) sbUpdate.second_prize = Number(updates.runnerUpPrize);
+      if (updates.thirdPrize !== undefined) sbUpdate.per_kill_prize = Number(updates.thirdPrize);
+      if (isPriceChange) sbUpdate.total_prize_pool = totalPrizePool;
+      if (updates.tournamentDate) sbUpdate.match_date = updates.tournamentDate;
+      if (updates.tournamentTime) sbUpdate.match_time = updates.tournamentTime;
+
+      await supabase.from("tournaments").update(sbUpdate).eq("id", "patel-ff-season-1");
+    } catch (e) {
+      console.error("Supabase update error:", e);
+    }
+  }
+
+  // 2. Sync to local database
+  local.tournament = updatedTournament;
+  if (newHistoryRecord) {
+    local.priceHistory.unshift(newHistoryRecord);
+    if (local.priceHistory.length > 50) {
+      local.priceHistory = local.priceHistory.slice(0, 50);
+    }
+  }
+  persistLocalFile(local);
+
+  return { tournament: updatedTournament, history: newHistoryRecord };
+}
+
 export async function updateTournamentPrizes(
   squadPrice: number,
   winnerPrize: number,
@@ -131,63 +227,14 @@ export async function updateTournamentPrizes(
   thirdPrize: number,
   note?: string
 ): Promise<{ tournament: TournamentData; history: PriceHistoryRecord }> {
-  const local = ensureLocalFile();
-  const totalPrizePool = Number(winnerPrize) + Number(runnerUpPrize) + Number(thirdPrize);
-  const now = new Date().toISOString();
-
-  const newHistoryRecord: PriceHistoryRecord = {
-    id: `ph-${Date.now()}`,
-    timestamp: now,
-    squadPrice: Number(squadPrice),
-    winnerPrize: Number(winnerPrize),
-    runnerUpPrize: Number(runnerUpPrize),
-    thirdPrize: Number(thirdPrize),
-    totalPrizePool,
-    updatedBy: "Admin",
-    note: note || "Prize pool revision",
-  };
-
-  const updatedTournament: TournamentData = {
-    ...local.tournament,
-    squadPrice: Number(squadPrice),
-    winnerPrize: Number(winnerPrize),
-    runnerUpPrize: Number(runnerUpPrize),
-    thirdPrize: Number(thirdPrize),
-    updatedAt: now,
-  };
-
-  // 1. Sync to Supabase Cloud Database
-  if (isSupabaseReady() && supabase) {
-    try {
-      const { error } = await supabase
-        .from("tournaments")
-        .update({
-          entry_fee: Number(squadPrice),
-          first_prize: Number(winnerPrize),
-          second_prize: Number(runnerUpPrize),
-          per_kill_prize: Number(thirdPrize),
-          total_prize_pool: totalPrizePool,
-          updated_at: now,
-        })
-        .eq("id", "patel-ff-season-1");
-
-      if (error) {
-        console.error("Failed to update Supabase tournament prizes:", error.message);
-      }
-    } catch (e) {
-      console.error("Supabase updateTournamentPrizes error:", e);
-    }
-  }
-
-  // 2. Sync to local database
-  local.tournament = updatedTournament;
-  local.priceHistory.unshift(newHistoryRecord);
-  if (local.priceHistory.length > 50) {
-    local.priceHistory = local.priceHistory.slice(0, 50);
-  }
-  persistLocalFile(local);
-
-  return { tournament: updatedTournament, history: newHistoryRecord };
+  const res = await updateTournamentSettings({
+    squadPrice,
+    winnerPrize,
+    runnerUpPrize,
+    thirdPrize,
+    note,
+  });
+  return { tournament: res.tournament, history: res.history! };
 }
 
 export async function getPriceHistory(): Promise<PriceHistoryRecord[]> {
@@ -206,6 +253,34 @@ export async function getTeams(): Promise<TeamRegistration[]> {
         .order("slot_number", { ascending: true });
 
       if (!error && Array.isArray(data)) {
+        if (data.length === 0 && local.teams.length > 0) {
+          // Supabase is empty; sync initial local teams to Supabase cloud
+          for (const t of local.teams) {
+            try {
+              await supabase.from("teams").upsert({
+                id: t.id,
+                team_name: t.teamName,
+                captain_phone: t.igl.phone,
+                slot_number: t.slotNumber,
+                utr_number: `DIRECT-${Date.now()}`,
+                entry_fee_paid: local.tournament.squadPrice,
+                payment_status: "verified",
+                status: "approved",
+                players: [
+                  { name: t.igl.name, uid: t.igl.uid, isCaptain: true },
+                  { name: t.player2.name, uid: t.player2.uid },
+                  { name: t.player3.name, uid: t.player3.uid },
+                  { name: t.player4.name, uid: t.player4.uid },
+                ],
+                created_at: t.registeredAt,
+              });
+            } catch (err) {
+              console.error("Seeding team to Supabase error:", err);
+            }
+          }
+          return local.teams;
+        }
+
         const cloudTeams: TeamRegistration[] = data.map((row: any) => {
           const players = Array.isArray(row.players) ? row.players : [];
           return {

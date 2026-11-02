@@ -9,6 +9,27 @@ export default function WebsiteNavbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-black/95 backdrop-blur border-b border-red-600/30">
+      {/* Sticky Strict Timing Rule Banner */}
+      <div className="bg-gradient-to-r from-red-950 via-red-900 to-red-950 border-b border-red-600/60 py-2 px-3 sm:px-4 text-center shadow-[0_4px_20px_rgba(239,68,68,0.3)]">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 flex-wrap text-[11px] sm:text-xs font-black uppercase tracking-wider text-white">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-400 animate-ping shrink-0" />
+          <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest shadow">
+            STRICT RULE
+          </span>
+          <span className="text-gray-200">
+            Room Entry at <strong className="text-yellow-300 font-black">8:45 PM</strong>
+          </span>
+          <span className="text-red-400">●</span>
+          <span className="text-gray-200">
+            Tournament Starts Sharp at <strong className="text-yellow-300 font-black">9:00 PM</strong>
+          </span>
+          <span className="text-red-400">●</span>
+          <span className="text-red-300 font-bold lowercase tracking-normal">
+            (late entry strictly not allowed)
+          </span>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Brand Logo & Juned Tag */}

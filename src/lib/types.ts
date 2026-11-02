@@ -2,6 +2,13 @@ export interface TournamentData {
   name: string;
   developer: string;
   whatsappNumber: string;
+  paymentNumber: string;
+  paymentName: string;
+  tournamentDate: string;
+  tournamentDay: string;
+  tournamentTime: string;
+  entryTime: string;
+  hidePointsTable: boolean;
   squadPrice: number;
   winnerPrize: number;
   runnerUpPrize: number;

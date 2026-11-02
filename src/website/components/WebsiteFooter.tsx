@@ -62,13 +62,13 @@ export default function WebsiteFooter() {
             </ul>
           </div>
 
-          {/* WhatsApp Contact & Click to Chat */}
+          {/* WhatsApp Contact & Payment Info */}
           <div>
             <h4 className="text-xs font-black uppercase tracking-widest text-white mb-3">
-              Official WhatsApp Support
+              Official Support &amp; Payment
             </h4>
             <p className="text-xs text-gray-400 mb-3">
-              Need assistance or tournament room details? Click below to chat directly with Juned:
+              Tournament queries and room entry details:
             </p>
 
             {/* Clickable WhatsApp Button with 'hi' message prefilled */}
@@ -76,14 +76,14 @@ export default function WebsiteFooter() {
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 bg-zinc-950 hover:bg-zinc-900 border-2 border-red-600/70 hover:border-red-500 text-white font-bold px-4 py-3 rounded-xl transition duration-200 group shadow-[0_0_15px_rgba(239,68,68,0.2)]"
+              className="inline-flex items-center gap-3 bg-zinc-950 hover:bg-zinc-900 border-2 border-red-600/70 hover:border-red-500 text-white font-bold px-4 py-2.5 rounded-xl transition duration-200 group shadow-[0_0_15px_rgba(239,68,68,0.2)] w-full mb-3"
             >
-              <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white group-hover:scale-105 transition">
+              <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white group-hover:scale-105 transition shrink-0">
                 <MessageCircle className="w-4 h-4 fill-white" />
               </div>
               <div className="text-left">
                 <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
-                  WhatsApp Chat
+                  WhatsApp Support
                 </div>
                 <div className="text-sm font-black text-white group-hover:text-red-400 transition">
                   +91 8849596369
@@ -91,8 +91,26 @@ export default function WebsiteFooter() {
               </div>
             </a>
 
+            {/* Official Payment Number Box */}
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs mb-3">
+              <span className="text-[10px] font-black uppercase text-red-400 tracking-wider block">
+                Official Entry Fee Payment:
+              </span>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-sm font-black text-white tracking-wide">
+                  +91 90543 58668
+                </span>
+                <span className="text-[11px] font-bold text-gray-300 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                  Juned Rafik Patel
+                </span>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-1">
+                Accepted: GPay / PhonePe / Paytm / BHIM UPI
+              </p>
+            </div>
+
             {/* Required Note: Only msg, do not call */}
-            <div className="mt-3 flex items-start gap-2 bg-red-950/40 border border-red-800/40 rounded-lg p-2.5">
+            <div className="flex items-start gap-2 bg-red-950/40 border border-red-800/40 rounded-lg p-2.5">
               <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
               <p className="text-[11px] font-bold text-red-300">
                 Note: Only message, do not call.

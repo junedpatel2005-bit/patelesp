@@ -58,7 +58,7 @@ export default function AdminNavbar({ activeTab, setActiveTab, onLogout }: Admin
               }`}
             >
               <DollarSign className="w-4 h-4" />
-              2. Prices &amp; History
+              2. Prices &amp; Schedule
             </button>
 
             <button
@@ -116,7 +116,7 @@ export default function AdminNavbar({ activeTab, setActiveTab, onLogout }: Admin
                 : "text-slate-600 hover:bg-slate-100"
             }`}
           >
-            2. Prices
+            2. Prices &amp; Schedule
           </button>
           <button
             onClick={() => setActiveTab("teams")}

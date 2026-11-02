@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTournament, updateTournamentPrizes } from "@/lib/db";
+import { getTournament, updateTournamentSettings } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,7 +12,11 @@ export async function GET() {
       { success: true, tournament },
       {
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+          "CDN-Cache-Control": "no-store",
+          "Vercel-CDN-Cache-Control": "no-store",
+          "Pragma": "no-cache",
+          "Expires": "0",
         },
       }
     );
@@ -27,44 +31,27 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { squadPrice, winnerPrize, runnerUpPrize, thirdPrize, note } = body;
 
-    if (
-      squadPrice === undefined ||
-      winnerPrize === undefined ||
-      runnerUpPrize === undefined ||
-      thirdPrize === undefined
-    ) {
-      return NextResponse.json(
-        { success: false, message: "Missing required prize fields" },
-        { status: 400 }
-      );
-    }
-
-    const result = await updateTournamentPrizes(
-      Number(squadPrice),
-      Number(winnerPrize),
-      Number(runnerUpPrize),
-      Number(thirdPrize),
-      note
-    );
+    const result = await updateTournamentSettings(body);
 
     return NextResponse.json(
       {
         success: true,
-        message: "Prizes updated successfully!",
+        message: "Tournament settings updated successfully!",
         tournament: result.tournament,
         historyRecord: result.history,
       },
       {
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0",
+          "CDN-Cache-Control": "no-store",
+          "Vercel-CDN-Cache-Control": "no-store",
         },
       }
     );
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, message: error?.message || "Failed to update prizes" },
+      { success: false, message: error?.message || "Failed to update settings" },
       { status: 500 }
     );
   }
