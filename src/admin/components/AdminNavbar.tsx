@@ -9,6 +9,8 @@ interface AdminNavbarProps {
   setActiveTab: (tab: "overview" | "prices" | "teams" | "payments") => void;
   onLogout: () => void;
   onCompleteTournament?: () => void;
+  teamsCount?: number;
+  unpaidCount?: number;
 }
 
 export default function AdminNavbar({
@@ -16,6 +18,8 @@ export default function AdminNavbar({
   setActiveTab,
   onLogout,
   onCompleteTournament,
+  teamsCount = 0,
+  unpaidCount = 0,
 }: AdminNavbarProps) {
   return (
     <header className="bg-white border-b border-blue-200 sticky top-0 z-40 shadow-sm">
@@ -41,11 +45,11 @@ export default function AdminNavbar({
             </div>
           </div>
 
-          {/* 3 Pages/Tabs Navigation */}
+          {/* Pages/Tabs Navigation */}
           <nav className="hidden md:flex items-center gap-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
             <button
               onClick={() => setActiveTab("overview")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2 ${
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2 ${
                 activeTab === "overview"
                   ? "bg-blue-600 text-white shadow-sm"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
@@ -57,7 +61,7 @@ export default function AdminNavbar({
 
             <button
               onClick={() => setActiveTab("prices")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2 ${
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2 ${
                 activeTab === "prices"
                   ? "bg-blue-600 text-white shadow-sm"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
@@ -69,26 +73,42 @@ export default function AdminNavbar({
 
             <button
               onClick={() => setActiveTab("teams")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2 ${
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2 ${
                 activeTab === "teams"
                   ? "bg-blue-600 text-white shadow-sm"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
               }`}
             >
               <Users className="w-4 h-4" />
-              3. Registered Teams (48 Players)
+              <span>3. Teams</span>
+              <span
+                className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                  activeTab === "teams"
+                    ? "bg-blue-800 text-white"
+                    : "bg-blue-100 text-blue-800"
+                }`}
+              >
+                {teamsCount}/12
+              </span>
             </button>
 
             <button
               onClick={() => setActiveTab("payments")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2 ${
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2 ${
                 activeTab === "payments"
                   ? "bg-blue-600 text-white shadow-sm"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
               }`}
             >
               <CreditCard className="w-4 h-4" />
-              4. Payments (UPI)
+              <span>4. Payments</span>
+              {unpaidCount > 0 ? (
+                <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full animate-pulse shadow-sm">
+                  {unpaidCount} UNPAID
+                </span>
+              ) : (
+                <span className="text-[10px] text-emerald-600 font-bold">✓</span>
+              )}
             </button>
           </nav>
 
@@ -152,23 +172,29 @@ export default function AdminNavbar({
           </button>
           <button
             onClick={() => setActiveTab("teams")}
-            className={`px-3 py-2 text-center rounded-lg text-[11px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 transition ${
+            className={`px-3 py-2 text-center rounded-lg text-[11px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 transition flex items-center gap-1 ${
               activeTab === "teams"
                 ? "bg-blue-600 text-white shadow-sm"
                 : "text-slate-600 hover:bg-slate-100"
             }`}
           >
-            3. Teams (48)
+            <span>3. Teams</span>
+            <span className="text-[10px] font-bold">({teamsCount})</span>
           </button>
           <button
             onClick={() => setActiveTab("payments")}
-            className={`px-3 py-2 text-center rounded-lg text-[11px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 transition ${
+            className={`px-3 py-2 text-center rounded-lg text-[11px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 transition flex items-center gap-1 ${
               activeTab === "payments"
                 ? "bg-blue-600 text-white shadow-sm"
                 : "text-slate-600 hover:bg-slate-100"
             }`}
           >
-            4. Payments
+            <span>4. Payments</span>
+            {unpaidCount > 0 && (
+              <span className="bg-red-500 text-white text-[9px] font-bold px-1 rounded-full">
+                {unpaidCount}
+              </span>
+            )}
           </button>
         </div>
       </div>

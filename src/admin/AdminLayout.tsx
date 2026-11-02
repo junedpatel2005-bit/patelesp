@@ -70,8 +70,10 @@ export default function AdminLayout() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
+    // Initial load
     fetchData();
 
+    // 1. Setup real-time Socket.IO subscriptions
     const socket = getSocket();
 
     const handleTournamentUpdate = (payload: any) => {
@@ -125,15 +127,19 @@ export default function AdminLayout() {
       socket.on("teams:reset", handleTeamsReset);
     }
 
-    let lastFetchTime = 0;
-    const handleFocus = () => {
-      const now = Date.now();
-      if (now - lastFetchTime > 15000) {
-        lastFetchTime = now;
-        fetchData();
-      }
+    // 2. High-speed 3-second auto-sync interval so teams registered on website show up immediately in admin
+    const pollInterval = setInterval(() => {
+      fetchData();
+    }, 3000);
+
+    // 3. Focus, visibility, and cross-tab storage sync
+    const handleImmediateSync = () => {
+      fetchData();
     };
-    window.addEventListener("focus", handleFocus);
+
+    window.addEventListener("focus", handleImmediateSync);
+    window.addEventListener("visibilitychange", handleImmediateSync);
+    window.addEventListener("teams:registered_event", handleImmediateSync);
 
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "patelesp_price_sync") {
@@ -143,6 +149,7 @@ export default function AdminLayout() {
     window.addEventListener("storage", handleStorage);
 
     return () => {
+      clearInterval(pollInterval);
       if (socket) {
         socket.off("tournament:updated", handleTournamentUpdate);
         socket.off("prices:updated", handleTournamentUpdate);
@@ -152,7 +159,9 @@ export default function AdminLayout() {
         socket.off("player:updated", handleTeamsUpdate);
         socket.off("teams:reset", handleTeamsReset);
       }
-      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("focus", handleImmediateSync);
+      window.removeEventListener("visibilitychange", handleImmediateSync);
+      window.removeEventListener("teams:registered_event", handleImmediateSync);
       window.removeEventListener("storage", handleStorage);
     };
   }, [isAuthenticated, fetchData]);
@@ -207,6 +216,8 @@ export default function AdminLayout() {
     }
   };
 
+  const unpaidCount = teams.filter((t) => (t.paymentStatus || "unpaid") !== "paid").length;
+
   if (checkingAuth) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
@@ -226,6 +237,8 @@ export default function AdminLayout() {
         setActiveTab={setActiveTab}
         onLogout={handleLogout}
         onCompleteTournament={() => setShowCompleteConfirm(true)}
+        teamsCount={teams.length}
+        unpaidCount={unpaidCount}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -241,6 +254,7 @@ export default function AdminLayout() {
             </button>
           </div>
         )}
+
         {loadingData ? (
           <div className="py-24 text-center">
             <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -254,6 +268,8 @@ export default function AdminLayout() {
                 teams={teams}
                 onNavigateToPrices={() => setActiveTab("prices")}
                 onNavigateToTeams={() => setActiveTab("teams")}
+                onNavigateToPayments={() => setActiveTab("payments")}
+                onRefresh={fetchData}
                 onCompleteTournament={() => setShowCompleteConfirm(true)}
               />
             )}
@@ -302,7 +318,7 @@ export default function AdminLayout() {
             </p>
 
             <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 text-xs text-amber-900 font-semibold text-left">
-              ⚠️ Note: This action resets live teams in both the local database and Supabase cloud. Real-time updates will broadcast instantly across all connected screens via Socket.IO.
+              ⚠️ Note: This action resets live teams in both the local database and Supabase cloud. Real-time updates will broadcast instantly across all connected screens.
             </div>
 
             <div className="pt-2 flex flex-col sm:flex-row gap-2.5">

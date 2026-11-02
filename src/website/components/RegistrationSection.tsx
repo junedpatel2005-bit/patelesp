@@ -78,6 +78,10 @@ export default function RegistrationSection({
         setShowPaymentModal(false);
         resetAllFormFields();
         setError(null);
+        try {
+          localStorage.setItem("patelesp_price_sync", String(Date.now()));
+          window.dispatchEvent(new Event("teams:registered_event"));
+        } catch (e) {}
       } else {
         alert(data.message || "Failed to cancel registration.");
       }
@@ -151,6 +155,12 @@ export default function RegistrationSection({
       setSuccessTeam(data.team);
       setShowPaymentModal(true);
       onRegistered(data.team);
+
+      // Trigger cross-tab sync so admin panel immediately picks up the new unpaid registration
+      try {
+        localStorage.setItem("patelesp_price_sync", String(Date.now()));
+        window.dispatchEvent(new Event("teams:registered_event"));
+      } catch (e) {}
 
       // Reset form
       setTeamName("");

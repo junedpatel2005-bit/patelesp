@@ -352,6 +352,21 @@ export async function getTeams(): Promise<TeamRegistration[]> {
           };
         });
 
+        // Normalize slot numbers to guarantee unique 1-12 slots
+        const seenSlots = new Set<number>();
+        cloudTeams.forEach((t) => {
+          if (!t.slotNumber || seenSlots.has(t.slotNumber) || t.slotNumber < 1 || t.slotNumber > 12) {
+            for (let s = 1; s <= 12; s++) {
+              if (!seenSlots.has(s)) {
+                t.slotNumber = s;
+                break;
+              }
+            }
+          }
+          seenSlots.add(t.slotNumber);
+        });
+        cloudTeams.sort((a, b) => a.slotNumber - b.slotNumber);
+
         local.teams = cloudTeams;
         persistLocalFile(local);
         return cloudTeams;

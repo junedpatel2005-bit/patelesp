@@ -36,6 +36,8 @@ export default function TeamsPage({
   const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | "unpaid" | "paid">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Edit Player State
   const [editingTarget, setEditingTarget] = useState<{
@@ -57,6 +59,27 @@ export default function TeamsPage({
   const maxTeams = 12;
   const maxPlayers = 48;
   const isFull = totalTeams >= maxTeams;
+
+  const paidCount = teams.filter((t) => t.paymentStatus === "paid").length;
+  const unpaidCount = teams.filter((t) => (t.paymentStatus || "unpaid") !== "paid").length;
+
+  const filteredTeams = teams.filter((team) => {
+    if (statusFilter === "unpaid" && team.paymentStatus === "paid") return false;
+    if (statusFilter === "paid" && team.paymentStatus !== "paid") return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const match =
+        team.teamName.toLowerCase().includes(q) ||
+        team.igl.name.toLowerCase().includes(q) ||
+        team.igl.phone.includes(q) ||
+        team.player2.name.toLowerCase().includes(q) ||
+        team.player3.name.toLowerCase().includes(q) ||
+        team.player4.name.toLowerCase().includes(q) ||
+        String(team.slotNumber).includes(q);
+      if (!match) return false;
+    }
+    return true;
+  });
 
   // Toggle Payment Status (Paid / Unpaid)
   const handleTogglePayment = async (teamId: string, teamName: string, newStatus: "paid" | "unpaid") => {
@@ -428,6 +451,81 @@ export default function TeamsPage({
         </div>
       )}
 
+      {/* Unpaid Squads Attention Banner */}
+      {unpaidCount > 0 && (
+        <div className="bg-red-50 border-2 border-red-300 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-black text-lg shrink-0 shadow-sm">
+              !
+            </span>
+            <div>
+              <h3 className="text-sm font-black text-red-900 uppercase">
+                {unpaidCount} Squad(s) Registered &bull; UNPAID Status
+              </h3>
+              <p className="text-xs text-red-700 mt-0.5">
+                Teams submitted their registration on the website. Verify their UPI payment and click &quot;Approve Payment&quot; on their card below.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setStatusFilter("unpaid")}
+            className="text-xs font-black uppercase bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl transition shadow-sm cursor-pointer whitespace-nowrap self-start sm:self-auto"
+          >
+            Show Unpaid Only ({unpaidCount})
+          </button>
+        </div>
+      )}
+
+      {/* Filter & Search Bar */}
+      {teams.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 p-3.5 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            <button
+              onClick={() => setStatusFilter("all")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition whitespace-nowrap ${
+                statusFilter === "all"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              All ({totalTeams})
+            </button>
+            <button
+              onClick={() => setStatusFilter("unpaid")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition whitespace-nowrap flex items-center gap-1.5 ${
+                statusFilter === "unpaid"
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+              }`}
+            >
+              <span>🔴 Unpaid</span>
+              <span className="font-mono text-[11px] font-black">({unpaidCount})</span>
+            </button>
+            <button
+              onClick={() => setStatusFilter("paid")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition whitespace-nowrap flex items-center gap-1.5 ${
+                statusFilter === "paid"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+              }`}
+            >
+              <span>🟢 Paid</span>
+              <span className="font-mono text-[11px] font-black">({paidCount})</span>
+            </button>
+          </div>
+
+          <div className="sm:max-w-xs w-full">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search team, player, phone, slot..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Team-Wise View (Each Team With 4 Players) */}
       {teams.length === 0 ? (
         <div className="bg-white border-2 border-slate-200 rounded-2xl p-12 text-center shadow-sm">
@@ -436,12 +534,22 @@ export default function TeamsPage({
             No Teams Registered Yet
           </h3>
           <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-            When teams register through the website, their details (team name, 4 players, UIDs, and IGL phone number) will appear here instantly.
+            When teams register through the website, their details (team name, 4 players, UIDs, and IGL phone number) will appear here instantly as UNPAID until approved.
           </p>
+        </div>
+      ) : filteredTeams.length === 0 ? (
+        <div className="bg-white border-2 border-slate-200 rounded-2xl p-8 text-center shadow-sm">
+          <p className="text-xs font-bold text-slate-500 uppercase">No teams match your filter criteria.</p>
+          <button
+            onClick={() => { setStatusFilter("all"); setSearchQuery(""); }}
+            className="mt-2 text-xs font-bold text-blue-600 hover:underline"
+          >
+            Clear filters
+          </button>
         </div>
       ) : (
         <div className="space-y-6">
-          {teams.map((team) => {
+          {filteredTeams.map((team) => {
             const cleanPhone = (team.igl.phone || "").replace(/[^0-9]/g, "");
             const whatsappMsg = encodeURIComponent(
               `Hello ${team.igl.name}! This is Juned from PATELESP. Your squad "${team.teamName}" is assigned to SLOT #${team.slotNumber}. Here are your tournament details:`

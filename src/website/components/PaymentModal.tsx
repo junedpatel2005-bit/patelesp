@@ -201,6 +201,10 @@ export default function PaymentModal({
       if (onPaymentSubmitted && data.team) {
         onPaymentSubmitted(data.team);
       }
+      try {
+        localStorage.setItem("patelesp_price_sync", String(Date.now()));
+        window.dispatchEvent(new Event("teams:registered_event"));
+      } catch (e) {}
 
       // Small confetti burst for submitting payment proof
       try {
