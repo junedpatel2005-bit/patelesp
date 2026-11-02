@@ -122,8 +122,8 @@ export async function getTournament(): Promise<TournamentData> {
           whatsappGroupLink: rulesObj.whatsappGroupLink || local.tournament.whatsappGroupLink || "https://chat.whatsapp.com/invite",
           paymentNumber: data.upi_id || local.tournament.paymentNumber || "+919054358668",
           paymentName: data.upi_name || local.tournament.paymentName || "Juned Rafik Patel",
-          tournamentDate: data.match_date || local.tournament.tournamentDate || "08 November 2026",
-          tournamentDay: data.tagline || local.tournament.tournamentDay || "Sunday",
+          tournamentDate: data.match_date || local.tournament.tournamentDate || "07 November 2026",
+          tournamentDay: data.tagline || local.tournament.tournamentDay || "Saturday",
           tournamentTime: data.match_time || local.tournament.tournamentTime || "09:00 PM IST",
           entryTime: rulesObj.entryTime || local.tournament.entryTime || "08:45 PM IST",
           hidePointsTable:
@@ -145,12 +145,20 @@ export async function getTournament(): Promise<TournamentData> {
           updatedAt: data.updated_at || new Date().toISOString(),
         };
 
-        local.tournament = cloudTournament;
-        persistLocalFile(local);
-        return cloudTournament;
+        const cloudTime = new Date(cloudTournament.updatedAt).getTime();
+        const localTime = new Date(local.tournament.updatedAt || 0).getTime();
+
+        // If local updates are newer, keep local and sync local to cloud
+        if (cloudTime >= localTime) {
+          local.tournament = cloudTournament;
+          persistLocalFile(local);
+          return cloudTournament;
+        } else {
+          return local.tournament;
+        }
       }
     } catch (e) {
-      console.error("Supabase getTournament fallback to local:", e);
+      // Fallback to local
     }
   }
 
@@ -205,10 +213,21 @@ export async function updateTournamentSettings(
     updatedAt: now,
   };
 
-  // 1. Sync to Supabase Cloud Database (Primary source on Vercel)
+  // 1. Immediately persist to local database so prices change instantly
+  local.tournament = updatedTournament;
+  if (newHistoryRecord) {
+    local.priceHistory.unshift(newHistoryRecord);
+    if (local.priceHistory.length > 50) {
+      local.priceHistory = local.priceHistory.slice(0, 50);
+    }
+  }
+  persistLocalFile(local);
+
+  // 2. Sync to Supabase Cloud Database using upsert (handles insert & update cleanly)
   if (isSupabaseReady() && supabase) {
     try {
       const sbUpdate: any = {
+        id: "patel-ff-season-1",
         updated_at: now,
       };
       if (updates.squadPrice !== undefined) sbUpdate.entry_fee = Number(updates.squadPrice);
@@ -237,46 +256,11 @@ export async function updateTournamentSettings(
         isRoomLive: updates.isRoomLive !== undefined ? updates.isRoomLive : local.tournament.isRoomLive,
       };
 
-      const { data: updatedRows, error } = await supabase
-        .from("tournaments")
-        .update(sbUpdate)
-        .eq("id", "patel-ff-season-1")
-        .select();
-
-      if (error) {
-        console.warn("Supabase update warning (fallback to local):", error.message);
-      } else if (!updatedRows || updatedRows.length === 0) {
-        // If the row doesn't exist yet, insert it automatically
-        const { error: insertErr } = await supabase.from("tournaments").insert({
-          id: "patel-ff-season-1",
-          title: "PATELESP FREE FIRE SQUAD SHOWDOWN",
-          tagline: updates.tournamentDay || "Saturday",
-          game: "Free Fire Max / Free Fire",
-          map: "Bermuda",
-          mode: "Squad Battle Royale (4 Players)",
-          contact_number: updates.whatsappNumber || "+918849596369",
-          upi_id: updates.paymentNumber || "+919054358668",
-          upi_name: updates.paymentName || "Juned Rafik Patel",
-          ...sbUpdate,
-        });
-        if (insertErr) {
-          console.warn("Supabase insert warning:", insertErr.message);
-        }
-      }
+      await supabase.from("tournaments").upsert(sbUpdate);
     } catch (e: any) {
-      console.warn("Supabase update non-fatal exception:", e?.message || e);
+      // Non-fatal, local DB is already updated
     }
   }
-
-  // 2. Sync to local database
-  local.tournament = updatedTournament;
-  if (newHistoryRecord) {
-    local.priceHistory.unshift(newHistoryRecord);
-    if (local.priceHistory.length > 50) {
-      local.priceHistory = local.priceHistory.slice(0, 50);
-    }
-  }
-  persistLocalFile(local);
 
   return { tournament: updatedTournament, history: newHistoryRecord };
 }

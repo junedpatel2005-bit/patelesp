@@ -7,7 +7,6 @@ import {
   Medal,
   Award,
   Save,
-  History,
   CheckCircle2,
   AlertCircle,
   RefreshCw,
@@ -21,7 +20,7 @@ import {
   Radio,
   MessageCircle,
 } from "lucide-react";
-import { TournamentData, PriceHistoryRecord } from "@/lib/types";
+import { TournamentData } from "@/lib/types";
 import { getSocket } from "@/lib/socket-client";
 
 interface PricesPageProps {
@@ -43,7 +42,6 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
   const [thirdPrize, setThirdPrize] = useState<string>(() =>
     tournament?.thirdPrize !== undefined ? String(tournament.thirdPrize) : "60"
   );
-  const [note, setNote] = useState<string>("");
 
   // Helper to parse date string into YYYY-MM-DD for native <input type="date">
   const parseToIso = (str: string): string => {
@@ -109,11 +107,6 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-
-  // Price history state
-  const [history, setHistory] = useState<PriceHistoryRecord[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(true);
-  const [clearingHistory, setClearingHistory] = useState(false);
 
   // Prevent background refreshes/window focus from wiping out unsaved edits
   const hasInitializedRef = React.useRef(false);
@@ -243,75 +236,6 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
     setter(cleaned);
   };
 
-  const fetchHistory = async () => {
-    try {
-      const res = await fetch(`/api/price-history?_t=${Date.now()}`, { cache: "no-store" });
-      const data = await res.json();
-      if (data.success && Array.isArray(data.history)) {
-        const seen = new Set();
-        const uniqueHistory = data.history.filter((h: any) => {
-          if (!h?.id || seen.has(h.id)) return false;
-          seen.add(h.id);
-          return true;
-        });
-        setHistory(uniqueHistory);
-      }
-    } catch (err) {
-      console.error("Failed to load price history:", err);
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
-
-  const handleClearHistory = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to CLEAR ALL price change history records? This cannot be undone."
-      )
-    ) {
-      return;
-    }
-
-    setClearingHistory(true);
-    try {
-      const res = await fetch("/api/price-history", { method: "DELETE" });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setHistory([]);
-      } else {
-        alert(data.message || "Failed to clear history.");
-      }
-    } catch (e) {
-      alert("Error clearing history.");
-    } finally {
-      setClearingHistory(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchHistory();
-
-    const socket = getSocket();
-    const handleTournamentUpdate = (payload: any) => {
-      if (payload?.historyRecord) {
-        setHistory((prev) => {
-          if (prev.some((h) => h.id === payload.historyRecord.id)) return prev;
-          return [payload.historyRecord, ...prev];
-        });
-      }
-    };
-
-    if (socket) {
-      socket.on("tournament:updated", handleTournamentUpdate);
-    }
-
-    return () => {
-      if (socket) {
-        socket.off("tournament:updated", handleTournamentUpdate);
-      }
-    };
-  }, []);
-
   const handleSaveAll = async (e?: any) => {
     if (e && typeof e.preventDefault === "function") {
       e.preventDefault();
@@ -349,7 +273,7 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
           roomPassword: roomPassword.trim(),
           isRoomLive,
           hidePointsTable,
-          note: note.trim() || "Prizes & Tournament settings modified from Admin Panel",
+          note: "Prizes & Tournament settings modified from Admin Panel",
         }),
       });
 
@@ -361,18 +285,11 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
       onTournamentUpdated(data.tournament);
       isDirtyRef.current = false;
       hasInitializedRef.current = false;
-      if (data.historyRecord) {
-        setHistory((prev) => {
-          if (prev.some((h) => h.id === data.historyRecord.id)) return prev;
-          return [data.historyRecord, ...prev];
-        });
-      }
       try {
         localStorage.setItem("patelesp_price_sync", Date.now().toString());
       } catch (e) {}
 
       setSaveSuccess(true);
-      setNote("");
       setTimeout(() => setSaveSuccess(false), 6000);
     } catch (err: any) {
       setSaveError(err?.message || "Failed to update prices.");
@@ -989,19 +906,15 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
             </div>
           </div>
 
-          {/* Reason note & Save bar */}
+          {/* Save Bar */}
           <div className="bg-slate-50 border-2 border-slate-200 p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-            <div className="flex-1 w-full">
-              <label className="block text-xs font-bold text-slate-600 mb-1">
-                Optional Revision Note (Logged in Price &amp; Settings History)
-              </label>
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="e.g. Set tournament day to Sunday 9:00 PM, entry fee updated"
-                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 font-medium"
-              />
+            <div>
+              <p className="text-xs font-bold text-slate-700 uppercase">
+                Save &amp; Publish Configuration
+              </p>
+              <p className="text-xs text-slate-500">
+                Clicking save immediately updates prices, match date, timing, and UPI credentials on the public website.
+              </p>
             </div>
 
             <div className="flex items-center gap-6 w-full sm:w-auto justify-end">
@@ -1031,106 +944,6 @@ export default function PricesPage({ tournament, onTournamentUpdated }: PricesPa
             </div>
           </div>
         </form>
-      </div>
-
-      {/* PRICE HISTORY TABLE */}
-      <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center font-bold">
-              <History className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-lg font-black text-slate-900 uppercase">
-                Historical Price Change Log
-              </h3>
-              <p className="text-xs text-slate-500">
-                Audited timeline of every entry fee &amp; prize revision saved by admin
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={fetchHistory}
-              disabled={loadingHistory}
-              className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loadingHistory ? "animate-spin" : ""}`} />
-              Refresh History
-            </button>
-            {history.length > 0 && (
-              <button
-                type="button"
-                onClick={handleClearHistory}
-                disabled={clearingHistory}
-                className="text-xs font-bold text-red-600 hover:text-red-800 flex items-center gap-1.5 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 transition cursor-pointer"
-                title="Permanently clear all price logs"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>{clearingHistory ? "Clearing..." : "Clear All History"}</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {loadingHistory ? (
-          <div className="py-12 text-center text-slate-400 text-xs">
-            Loading price history records...
-          </div>
-        ) : history.length === 0 ? (
-          <div className="py-12 text-center text-slate-400 text-xs">
-            No price revisions logged yet.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200 text-[11px]">
-                  <th className="py-3 px-4">Date &amp; Time</th>
-                  <th className="py-3 px-4">Squad Price</th>
-                  <th className="py-3 px-4">Winner (1st)</th>
-                  <th className="py-3 px-4">Runner Up (2nd)</th>
-                  <th className="py-3 px-4">3rd Place</th>
-                  <th className="py-3 px-4">Total Pool</th>
-                  <th className="py-3 px-4">Changed By / Note</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {history.map((item, idx) => (
-                  <tr key={`${item.id || "history"}-${idx}`} className="hover:bg-slate-50 transition">
-                    <td className="py-3.5 px-4 font-mono text-slate-500 whitespace-nowrap">
-                      {new Date(item.timestamp).toLocaleString("en-IN", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
-                      ₹{item.squadPrice}
-                    </td>
-                    <td className="py-3.5 px-4 font-extrabold text-blue-600">
-                      ₹{item.winnerPrize}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-700">
-                      ₹{item.runnerUpPrize}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-700">
-                      ₹{item.thirdPrize}
-                    </td>
-                    <td className="py-3.5 px-4 font-black text-slate-900">
-                      ₹{item.totalPrizePool}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-600 max-w-xs truncate">
-                      <span className="font-semibold text-slate-800">{item.updatedBy}: </span>
-                      {item.note || "Prize update"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   );
