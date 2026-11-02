@@ -3,8 +3,10 @@
     "name": "PATELESP FREE FIRE SQUAD SHOWDOWN",
     "developer": "Juned",
     "whatsappNumber": "+918849596369",
+    "whatsappGroupLink": "https://chat.whatsapp.com/invite",
     "paymentNumber": "+919054358668",
     "paymentName": "Juned Rafik Patel",
+    "upiId": "9054358668@ybl",
     "tournamentDate": "07 November 2026",
     "tournamentDay": "Saturday",
     "tournamentTime": "09:00 PM IST",
@@ -17,9 +19,34 @@
     "maxTeams": 12,
     "maxPlayers": 48,
     "isRegistrationOpen": true,
-    "updatedAt": "2026-11-02T08:55:11.42+00:00"
+    "roomId": "",
+    "roomPassword": "",
+    "isRoomLive": false,
+    "updatedAt": "2026-11-02T10:14:37.517+00:00"
   },
   "priceHistory": [
+    {
+      "id": "ph-1793614477517",
+      "timestamp": "2026-11-02T10:14:37.517Z",
+      "squadPrice": 50,
+      "winnerPrize": 180,
+      "runnerUpPrize": 100,
+      "thirdPrize": 60,
+      "totalPrizePool": 340,
+      "updatedBy": "Admin",
+      "note": "Prizes & Tournament settings modified from Admin Panel"
+    },
+    {
+      "id": "ph-1793614474824",
+      "timestamp": "2026-11-02T10:14:34.824Z",
+      "squadPrice": 50,
+      "winnerPrize": 180,
+      "runnerUpPrize": 100,
+      "thirdPrize": 60,
+      "totalPrizePool": 340,
+      "updatedBy": "Admin",
+      "note": "Prizes & Tournament settings modified from Admin Panel"
+    },
     {
       "id": "ph-1793609711420",
       "timestamp": "2026-11-02T08:55:11.420Z",

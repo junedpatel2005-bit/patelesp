@@ -145,17 +145,9 @@ export async function getTournament(): Promise<TournamentData> {
           updatedAt: data.updated_at || new Date().toISOString(),
         };
 
-        const cloudTime = new Date(cloudTournament.updatedAt).getTime();
-        const localTime = new Date(local.tournament.updatedAt || 0).getTime();
-
-        // If local updates are newer, keep local and sync local to cloud
-        if (cloudTime >= localTime) {
-          local.tournament = cloudTournament;
-          persistLocalFile(local);
-          return cloudTournament;
-        } else {
-          return local.tournament;
-        }
+        local.tournament = cloudTournament;
+        persistLocalFile(local);
+        return cloudTournament;
       }
     } catch (e) {
       // Fallback to local
@@ -263,12 +255,16 @@ export async function updateTournamentSettings(
         },
       };
 
-      const { error: upsertErr } = await supabase.from("tournaments").upsert(fullCloudPayload);
+      const { error: upsertErr } = await supabase
+        .from("tournaments")
+        .upsert(fullCloudPayload, { onConflict: "id" });
       if (upsertErr) {
-        console.warn("Supabase upsert warning:", upsertErr.message);
+        console.error("Supabase upsert error:", upsertErr.message);
+        throw new Error(`Failed to update cloud tournament database: ${upsertErr.message}`);
       }
     } catch (e: any) {
-      console.warn("Supabase update non-fatal exception:", e?.message || e);
+      console.error("Supabase update error:", e?.message || e);
+      throw e;
     }
   }
 
@@ -436,7 +432,7 @@ export async function registerTeam(data: {
   // Sync to Supabase
   if (isSupabaseReady() && supabase) {
     try {
-      await supabase.from("teams").insert({
+      const { error: insertErr } = await supabase.from("teams").insert({
         id: teamId,
         team_name: newTeam.teamName,
         captain_phone: newTeam.igl.phone,
@@ -453,8 +449,14 @@ export async function registerTeam(data: {
         ],
         created_at: now,
       });
-    } catch (e) {
-      console.error("Supabase registerTeam error:", e);
+
+      if (insertErr) {
+        console.error("Supabase registerTeam error:", insertErr.message);
+        throw new Error(`Failed to save team registration to cloud database: ${insertErr.message}`);
+      }
+    } catch (e: any) {
+      console.error("Supabase registerTeam exception:", e?.message || e);
+      throw e;
     }
   }
 
@@ -528,14 +530,14 @@ export async function deletePlayerFromTeam(
             { name: team.player4.name, uid: team.player4.uid },
           ],
         })
-        .eq("id", teamId);
+        .eq("id", team.id);
     } catch (e) {
       console.error("Supabase deletePlayerFromTeam error:", e);
     }
   }
 
   const local = ensureLocalFile();
-  const localTeam = local.teams.find((t) => t.id === teamId);
+  const localTeam = local.teams.find((t) => t.id === team.id);
   if (localTeam) {
     Object.assign(localTeam, team);
     persistLocalFile(local);
@@ -550,7 +552,7 @@ export async function updatePlayerInTeam(
   playerInfo: { name: string; uid?: string; phone?: string }
 ): Promise<TeamRegistration | null> {
   const currentTeams = await getTeams();
-  const team = currentTeams.find((t) => t.id === teamId);
+  const team = currentTeams.find((t) => t.id === teamId || String(t.slotNumber) === teamId);
   if (!team) return null;
 
   if (playerKey === "igl") {
@@ -590,14 +592,14 @@ export async function updatePlayerInTeam(
             { name: team.player4.name, uid: team.player4.uid },
           ],
         })
-        .eq("id", teamId);
+        .eq("id", team.id);
     } catch (e) {
       console.error("Supabase updatePlayerInTeam error:", e);
     }
   }
 
   const local = ensureLocalFile();
-  const localTeam = local.teams.find((t) => t.id === teamId);
+  const localTeam = local.teams.find((t) => t.id === team.id);
   if (localTeam) {
     Object.assign(localTeam, team);
     persistLocalFile(local);
@@ -627,13 +629,12 @@ export async function updateTeamPaymentStatus(
   paymentUtr?: string,
   paymentAmount?: number
 ): Promise<TeamRegistration | null> {
-  const local = ensureLocalFile();
-  const index = local.teams.findIndex((t) => t.id === teamId);
-  if (index === -1) {
+  const currentTeams = await getTeams();
+  const team = currentTeams.find((t) => t.id === teamId || String(t.slotNumber) === teamId);
+  if (!team) {
     return null;
   }
 
-  const team = local.teams[index];
   team.paymentStatus = paymentStatus;
   if (paymentUtr !== undefined) {
     team.paymentUtr = paymentUtr.trim();
@@ -641,11 +642,10 @@ export async function updateTeamPaymentStatus(
   if (paymentAmount !== undefined) {
     team.paymentAmount = Number(paymentAmount);
   } else if (!team.paymentAmount) {
-    team.paymentAmount = Number(local.tournament.squadPrice || 100);
+    const tournament = await getTournament();
+    team.paymentAmount = Number(tournament.squadPrice || 40);
   }
   team.paymentTime = new Date().toISOString();
-  local.teams[index] = team;
-  persistLocalFile(local);
 
   // Sync to Supabase Cloud Database
   if (isSupabaseReady() && supabase) {
@@ -657,13 +657,22 @@ export async function updateTeamPaymentStatus(
           payment_status: dbStatus,
           status: paymentStatus === "paid" ? "approved" : "pending",
           utr_number: team.paymentUtr || `DIRECT-${Date.now()}`,
-          entry_fee_paid: team.paymentAmount || local.tournament.squadPrice,
+          entry_fee_paid: team.paymentAmount || 40,
         })
-        .eq("id", teamId);
+        .eq("id", team.id);
     } catch (e) {
       console.error("Supabase updateTeamPaymentStatus error:", e);
     }
   }
+
+  const local = ensureLocalFile();
+  const index = local.teams.findIndex((t) => t.id === team.id);
+  if (index !== -1) {
+    local.teams[index] = team;
+  } else {
+    local.teams.push(team);
+  }
+  persistLocalFile(local);
 
   return team;
 }
