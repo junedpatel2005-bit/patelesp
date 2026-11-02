@@ -268,10 +268,10 @@ export default function PaymentModal({
             </div>
 
             <div className="my-1">
-              <span className="text-xs uppercase font-extrabold tracking-widest text-gray-400 block mb-0.5">
-                YOUR ROOM SLOT NUMBER
+              <span className="text-xs uppercase font-extrabold tracking-widest text-emerald-400 bg-emerald-950/80 border border-emerald-500/50 px-2.5 py-0.5 rounded-full inline-block mb-1">
+                ✓ SLOT IS BOOKED
               </span>
-              <div className="inline-flex items-center gap-2 bg-black/80 border-2 border-red-600/70 px-5 py-2 rounded-2xl shadow-inner">
+              <div className="inline-flex items-center gap-2 bg-black/80 border-2 border-red-600/70 px-5 py-2 rounded-2xl shadow-inner mt-1">
                 <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
                   SLOT <span className="text-red-500">#{team.slotNumber}</span>
                 </span>

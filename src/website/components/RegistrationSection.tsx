@@ -431,11 +431,11 @@ export default function RegistrationSection({
                 <div className="flex items-center gap-2 text-[10px] font-black uppercase">
                   <span className="flex items-center gap-1 text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Open Slot
+                    Available
                   </span>
                   <span className="flex items-center gap-1 text-red-400 bg-red-950/60 border border-red-800/60 px-2 py-0.5 rounded">
                     <span className="w-2 h-2 rounded-full bg-red-500" />
-                    Occupied
+                    Slot is Booked
                   </span>
                 </div>
               </div>
@@ -470,9 +470,14 @@ export default function RegistrationSection({
                       </span>
 
                       {isOccupied ? (
-                        <span className="mt-1 text-[9px] font-extrabold uppercase text-red-400/90 truncate max-w-[90px] block" title={occupant?.teamName}>
-                          {occupant?.teamName || "TAKEN"}
-                        </span>
+                        <>
+                          <span className="mt-1 text-[8.5px] font-black uppercase text-red-400 bg-red-950/90 border border-red-700/60 px-1.5 py-0.5 rounded shadow-sm">
+                            SLOT IS BOOKED
+                          </span>
+                          <span className="text-[9px] font-bold text-gray-400 truncate max-w-[90px] block mt-0.5" title={occupant?.teamName}>
+                            {occupant?.teamName}
+                          </span>
+                        </>
                       ) : isSelected ? (
                         <span className="mt-1 text-[9px] font-black uppercase text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/40">
                           SELECTED

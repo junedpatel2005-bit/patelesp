@@ -244,22 +244,26 @@ export default function ParticipateSlotsList() {
                     </span>
 
                     {team ? (
-                      team.paymentStatus === "paid" ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-400 bg-emerald-950/80 border border-emerald-500/60 px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]">
-                          <CheckCircle className="w-3 h-3 text-emerald-400" />
-                          PAID &amp; CONFIRMED
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-red-300 bg-red-950 border border-red-600 px-2 py-0.5 rounded-full shadow-sm">
+                          SLOT IS BOOKED
                         </span>
-                      ) : team.paymentStatus === "pending" ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-black text-amber-400 bg-amber-950/80 border border-amber-500/60 px-2.5 py-0.5 rounded-full animate-pulse">
-                          <Clock className="w-3 h-3 text-amber-400" />
-                          PAYMENT PENDING REVIEW
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-yellow-400 bg-yellow-950/60 border border-yellow-800/60 px-2.5 py-0.5 rounded-full">
-                          <CheckCircle className="w-3 h-3" />
-                          REGISTERED (UNPAID)
-                        </span>
-                      )
+                        {team.paymentStatus === "paid" ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-400 bg-emerald-950/80 border border-emerald-500/60 px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+                            <CheckCircle className="w-3 h-3 text-emerald-400" />
+                            PAID
+                          </span>
+                        ) : team.paymentStatus === "pending" ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-400 bg-amber-950/80 border border-amber-500/60 px-2 py-0.5 rounded-full animate-pulse">
+                            <Clock className="w-3 h-3 text-amber-400" />
+                            PENDING
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-yellow-400 bg-yellow-950/60 border border-yellow-800/60 px-2 py-0.5 rounded-full">
+                            UNPAID
+                          </span>
+                        )}
+                      </div>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-zinc-900 px-2.5 py-0.5 rounded-full">
                         <Clock className="w-3 h-3" />
