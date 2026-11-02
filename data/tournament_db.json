@@ -1,0 +1,87 @@
+{
+  "tournament": {
+    "name": "PATELESP",
+    "developer": "Juned",
+    "whatsappNumber": "+918849596369",
+    "squadPrice": 150,
+    "winnerPrize": 1500,
+    "runnerUpPrize": 700,
+    "thirdPrize": 350,
+    "maxTeams": 12,
+    "maxPlayers": 48,
+    "isRegistrationOpen": true,
+    "updatedAt": "2026-11-02T06:09:32.360Z"
+  },
+  "priceHistory": [
+    {
+      "id": "ph-1793599772360",
+      "timestamp": "2026-11-02T06:09:32.360Z",
+      "squadPrice": 150,
+      "winnerPrize": 1500,
+      "runnerUpPrize": 700,
+      "thirdPrize": 350,
+      "totalPrizePool": 2550,
+      "updatedBy": "Admin",
+      "note": "Updated by Admin Juned"
+    },
+    {
+      "id": "init-1",
+      "timestamp": "2026-11-02T06:08:16.284Z",
+      "squadPrice": 100,
+      "winnerPrize": 1000,
+      "runnerUpPrize": 500,
+      "thirdPrize": 250,
+      "totalPrizePool": 1750,
+      "updatedBy": "Admin",
+      "note": "Initial Tournament Launch Prices"
+    }
+  ],
+  "teams": [
+    {
+      "id": "TEAM-1",
+      "slotNumber": 1,
+      "teamName": "SOUL STRIKERS",
+      "igl": {
+        "name": "Juned Patel",
+        "uid": "512893471",
+        "phone": "8849596369"
+      },
+      "player2": {
+        "name": "Aman Khan",
+        "uid": "512893472"
+      },
+      "player3": {
+        "name": "Rohit Sharma",
+        "uid": "512893473"
+      },
+      "player4": {
+        "name": "Kabir Singh",
+        "uid": "512893474"
+      },
+      "registeredAt": "2026-11-02T01:08:16.284Z"
+    },
+    {
+      "id": "TEAM-2",
+      "slotNumber": 2,
+      "teamName": "RED DRAGONS",
+      "igl": {
+        "name": "Vikram Rathore",
+        "uid": "619284751",
+        "phone": "9876543210"
+      },
+      "player2": {
+        "name": "Sameer Verma",
+        "uid": "619284752"
+      },
+      "player3": {
+        "name": "Ankit Tiwari",
+        "uid": ""
+      },
+      "player4": {
+        "name": "Dev Patel",
+        "uid": "619284754"
+      },
+      "registeredAt": "2026-11-02T04:08:16.285Z"
+    }
+  ]
+}

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTournament, updateTournament } from "@/lib/storage";
+import { getTournament, updateTournamentPrizes } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const tournament = await getTournament();
+    const tournament = getTournament();
     return NextResponse.json(
       { success: true, tournament },
       {
@@ -15,9 +15,9 @@ export async function GET() {
         },
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json(
-      { success: false, message: "Failed to fetch tournament details" },
+      { success: false, message: error?.message || "Failed to fetch tournament" },
       { status: 500 }
     );
   }
@@ -26,21 +26,44 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const adminKey = req.headers.get("x-admin-key");
-    const expectedKey = process.env.ADMIN_SECRET_KEY || "2412";
+    const { squadPrice, winnerPrize, runnerUpPrize, thirdPrize, note } = body;
 
-    if (adminKey !== expectedKey) {
+    if (
+      squadPrice === undefined ||
+      winnerPrize === undefined ||
+      runnerUpPrize === undefined ||
+      thirdPrize === undefined
+    ) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized admin access" },
-        { status: 401 }
+        { success: false, message: "Missing required prize fields" },
+        { status: 400 }
       );
     }
 
-    const updated = await updateTournament(body);
-    return NextResponse.json({ success: true, tournament: updated });
-  } catch (error) {
+    const result = updateTournamentPrizes(
+      Number(squadPrice),
+      Number(winnerPrize),
+      Number(runnerUpPrize),
+      Number(thirdPrize),
+      note
+    );
+
     return NextResponse.json(
-      { success: false, message: "Failed to update tournament details" },
+      {
+        success: true,
+        message: "Prizes updated successfully!",
+        tournament: result.tournament,
+        historyRecord: result.history,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, message: error?.message || "Failed to update prizes" },
       { status: 500 }
     );
   }
