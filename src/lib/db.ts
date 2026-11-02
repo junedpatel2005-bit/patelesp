@@ -148,6 +148,10 @@ export async function getTournament(): Promise<TournamentData> {
           updatedAt: row.updated_at || new Date().toISOString(),
         };
 
+        if (Array.isArray(rulesObj.priceHistory) && rulesObj.priceHistory.length > 0) {
+          local.priceHistory = rulesObj.priceHistory;
+        }
+
         local.tournament = cloudTournament;
         persistLocalFile(local);
         return cloudTournament;
@@ -255,6 +259,7 @@ export async function updateTournamentSettings(
           roomId: updates.roomId ?? local.tournament.roomId ?? "",
           roomPassword: updates.roomPassword ?? local.tournament.roomPassword ?? "",
           isRoomLive: updates.isRoomLive !== undefined ? updates.isRoomLive : (local.tournament.isRoomLive ?? false),
+          priceHistory: local.priceHistory,
         },
       };
 
@@ -290,8 +295,13 @@ export async function updateTournamentPrizes(
 }
 
 export async function getPriceHistory(): Promise<PriceHistoryRecord[]> {
+  try {
+    await getTournament();
+  } catch (e) {}
   const local = ensureLocalFile();
-  return Array.isArray(local.priceHistory) ? local.priceHistory : [];
+  return Array.isArray(local.priceHistory) && local.priceHistory.length > 0
+    ? local.priceHistory
+    : initialPriceHistory;
 }
 
 export async function clearPriceHistory(): Promise<boolean> {
@@ -485,19 +495,20 @@ export async function registerTeam(data: {
 }
 
 export async function deleteTeam(teamId: string, slotNumber?: number): Promise<boolean> {
-  let supabaseSuccess = false;
-
   if (isSupabaseReady() && supabase) {
     try {
       // 1. Delete by primary ID
       if (teamId) {
-        const { error: idErr } = await supabase.from("teams").delete().eq("id", teamId);
-        if (!idErr) supabaseSuccess = true;
+        await executeWithCloudFallback(async (client) => {
+          return client.from("teams").delete().eq("id", teamId);
+        });
       }
       // 2. Also delete by slot_number if given or if teamId contains slot
       const numericSlot = slotNumber || Number(teamId.replace(/\D/g, ""));
       if (!isNaN(numericSlot) && numericSlot > 0 && numericSlot <= 12) {
-        await supabase.from("teams").delete().eq("slot_number", numericSlot);
+        await executeWithCloudFallback(async (client) => {
+          return client.from("teams").delete().eq("slot_number", numericSlot);
+        });
       }
     } catch (e: any) {
       console.warn("Supabase deleteTeam exception:", e?.message || e);
@@ -535,18 +546,20 @@ export async function deletePlayerFromTeam(
   // Sync to Supabase
   if (isSupabaseReady() && supabase) {
     try {
-      await supabase
-        .from("teams")
-        .update({
-          captain_phone: team.igl.phone,
-          players: [
-            { name: team.igl.name, uid: team.igl.uid, isCaptain: true },
-            { name: team.player2.name, uid: team.player2.uid },
-            { name: team.player3.name, uid: team.player3.uid },
-            { name: team.player4.name, uid: team.player4.uid },
-          ],
-        })
-        .eq("id", team.id);
+      await executeWithCloudFallback(async (client) => {
+        return client
+          .from("teams")
+          .update({
+            captain_phone: team.igl.phone,
+            players: [
+              { name: team.igl.name, uid: team.igl.uid, isCaptain: true },
+              { name: team.player2.name, uid: team.player2.uid },
+              { name: team.player3.name, uid: team.player3.uid },
+              { name: team.player4.name, uid: team.player4.uid },
+            ],
+          })
+          .eq("id", team.id);
+      });
     } catch (e) {
       console.error("Supabase deletePlayerFromTeam error:", e);
     }
@@ -597,18 +610,20 @@ export async function updatePlayerInTeam(
   // Sync to Supabase
   if (isSupabaseReady() && supabase) {
     try {
-      await supabase
-        .from("teams")
-        .update({
-          captain_phone: team.igl.phone,
-          players: [
-            { name: team.igl.name, uid: team.igl.uid, isCaptain: true },
-            { name: team.player2.name, uid: team.player2.uid },
-            { name: team.player3.name, uid: team.player3.uid },
-            { name: team.player4.name, uid: team.player4.uid },
-          ],
-        })
-        .eq("id", team.id);
+      await executeWithCloudFallback(async (client) => {
+        return client
+          .from("teams")
+          .update({
+            captain_phone: team.igl.phone,
+            players: [
+              { name: team.igl.name, uid: team.igl.uid, isCaptain: true },
+              { name: team.player2.name, uid: team.player2.uid },
+              { name: team.player3.name, uid: team.player3.uid },
+              { name: team.player4.name, uid: team.player4.uid },
+            ],
+          })
+          .eq("id", team.id);
+      });
     } catch (e) {
       console.error("Supabase updatePlayerInTeam error:", e);
     }
