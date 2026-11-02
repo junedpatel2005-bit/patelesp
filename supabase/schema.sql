@@ -1,50 +1,51 @@
 -- ==============================================================================
 -- PATELESP - Free Fire Esports Tournament Platform
--- Supabase PostgreSQL Database Schema
+-- Supabase PostgreSQL Database Schema & PostgREST Schema Reload
 --
 -- How to apply:
--- 1. Open: https://supabase.com/dashboard/project/qintzlgeicjemcprkwtl/sql/new
--- 2. Paste this entire script into the query editor
--- 3. Click "RUN" (or Ctrl + Enter)
+-- 1. Go to your Supabase Dashboard -> SQL Editor
+-- 2. Click "New Query"
+-- 3. Paste this entire script
+-- 4. Click "Run" (or Ctrl + Enter)
 -- ==============================================================================
 
 -- 1. TOURNAMENT CONFIG TABLE
 CREATE TABLE IF NOT EXISTS public.tournaments (
   id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  tagline TEXT NOT NULL,
-  game TEXT NOT NULL,
-  map TEXT NOT NULL,
-  mode TEXT NOT NULL,
-  entry_fee INTEGER NOT NULL DEFAULT 50,
-  first_prize INTEGER NOT NULL DEFAULT 1000,
-  second_prize INTEGER NOT NULL DEFAULT 500,
-  per_kill_prize INTEGER NOT NULL DEFAULT 0,
-  total_prize_pool INTEGER NOT NULL DEFAULT 1500,
+  title TEXT NOT NULL DEFAULT 'PATELESP FREE FIRE SQUAD SHOWDOWN',
+  tagline TEXT NOT NULL DEFAULT 'Saturday',
+  game TEXT NOT NULL DEFAULT 'Free Fire Max / Free Fire',
+  map TEXT NOT NULL DEFAULT 'Bermuda',
+  mode TEXT NOT NULL DEFAULT 'Squad Battle Royale (4 Players)',
+  entry_fee INTEGER NOT NULL DEFAULT 40,
+  first_prize INTEGER NOT NULL DEFAULT 180,
+  second_prize INTEGER NOT NULL DEFAULT 100,
+  per_kill_prize INTEGER NOT NULL DEFAULT 60,
+  total_prize_pool INTEGER NOT NULL DEFAULT 340,
   max_slots INTEGER NOT NULL DEFAULT 48,
-  match_date TEXT NOT NULL,
-  match_time TEXT NOT NULL,
-  upi_id TEXT NOT NULL,
-  upi_name TEXT NOT NULL,
+  match_date TEXT NOT NULL DEFAULT '07 November 2026',
+  match_time TEXT NOT NULL DEFAULT '09:00 PM IST',
+  upi_id TEXT NOT NULL DEFAULT '+919054358668',
+  upi_name TEXT NOT NULL DEFAULT 'Juned Rafik Patel',
   room_id TEXT DEFAULT '',
   room_password TEXT DEFAULT '',
   room_announced BOOLEAN NOT NULL DEFAULT FALSE,
-  rules JSONB NOT NULL DEFAULT '[]'::jsonb,
-  contact_number TEXT NOT NULL,
+  rules JSONB NOT NULL DEFAULT '{}'::jsonb,
+  contact_number TEXT NOT NULL DEFAULT '+918849596369',
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
 -- 2. TEAMS / SQUAD REGISTRATIONS TABLE
 CREATE TABLE IF NOT EXISTS public.teams (
-  id TEXT PRIMARY KEY, -- e.g. "PTL-8841"
+  id TEXT PRIMARY KEY,
   team_name TEXT NOT NULL,
   captain_phone TEXT NOT NULL,
   captain_email TEXT,
   players JSONB NOT NULL,
   substitute_player JSONB,
   utr_number TEXT NOT NULL,
-  entry_fee_paid INTEGER NOT NULL DEFAULT 50,
+  entry_fee_paid INTEGER NOT NULL DEFAULT 40,
   payment_status TEXT NOT NULL DEFAULT 'pending',
   status TEXT NOT NULL DEFAULT 'pending',
   slot_number INTEGER,
@@ -52,9 +53,9 @@ CREATE TABLE IF NOT EXISTS public.teams (
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- Index for searching tickets fast by ID or Captain phone
 CREATE INDEX IF NOT EXISTS idx_teams_captain_phone ON public.teams (captain_phone);
 CREATE INDEX IF NOT EXISTS idx_teams_status ON public.teams (status);
+CREATE INDEX IF NOT EXISTS idx_teams_slot_number ON public.teams (slot_number);
 CREATE INDEX IF NOT EXISTS idx_teams_created_at ON public.teams (created_at DESC);
 
 -- 3. ADMIN NOTIFICATIONS TABLE
@@ -64,7 +65,7 @@ CREATE TABLE IF NOT EXISTS public.admin_notifications (
   team_name TEXT NOT NULL,
   captain_phone TEXT NOT NULL,
   utr_number TEXT NOT NULL,
-  amount INTEGER NOT NULL DEFAULT 50,
+  amount INTEGER NOT NULL DEFAULT 40,
   read BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
@@ -72,34 +73,41 @@ CREATE TABLE IF NOT EXISTS public.admin_notifications (
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON public.admin_notifications (read);
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON public.admin_notifications (created_at DESC);
 
--- ==============================================================================
--- 4. ENABLE ROW LEVEL SECURITY (RLS) & FULL ACCESS POLICIES
--- ==============================================================================
+-- 4. ENABLE ROW LEVEL SECURITY (RLS)
 ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_notifications ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "App full access tournaments" ON public.tournaments;
-CREATE POLICY "App full access tournaments"
+-- 5. CREATE FULL PERMISSIVE ACCESS POLICIES
+DROP POLICY IF EXISTS "Public full access tournaments" ON public.tournaments;
+CREATE POLICY "Public full access tournaments"
   ON public.tournaments FOR ALL
   USING (true)
   WITH CHECK (true);
 
-DROP POLICY IF EXISTS "App full access teams" ON public.teams;
-CREATE POLICY "App full access teams"
+DROP POLICY IF EXISTS "Public full access teams" ON public.teams;
+CREATE POLICY "Public full access teams"
   ON public.teams FOR ALL
   USING (true)
   WITH CHECK (true);
 
-DROP POLICY IF EXISTS "App full access notifications" ON public.admin_notifications;
-CREATE POLICY "App full access notifications"
+DROP POLICY IF EXISTS "Public full access notifications" ON public.admin_notifications;
+CREATE POLICY "Public full access notifications"
   ON public.admin_notifications FOR ALL
   USING (true)
   WITH CHECK (true);
 
--- ==============================================================================
--- 5. INITIAL SEED DATA (Uses jsonb_build_array to avoid newline character errors)
--- ==============================================================================
+-- 6. GRANT API ROLE PERMISSIONS (Required for PostgREST API)
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+
+-- 7. SEED INITIAL TOURNAMENT RECORD
 INSERT INTO public.tournaments (
   id,
   title,
@@ -125,42 +133,32 @@ INSERT INTO public.tournaments (
 ) VALUES (
   'patel-ff-season-1',
   'PATELESP FREE FIRE SQUAD SHOWDOWN',
-  'India''s Ultimate Free Fire Battle Royale Arena',
+  'Saturday',
   'Free Fire Max / Free Fire',
   'Bermuda',
   'Squad Battle Royale (4 Players)',
-  50,
-  1000,
-  500,
-  0,
-  1500,
+  40,
+  180,
+  100,
+  60,
+  340,
   48,
-  '2026-11-08',
-  '08:30 PM IST',
-  'patelesp@upi',
-  'Patel Esports Arena',
+  '07 November 2026',
+  '09:00 PM IST',
+  '+919054358668',
+  'Juned Rafik Patel',
   '',
   '',
   FALSE,
-  jsonb_build_array(
-    'Squad must strictly consist of the 4 registered players. No sudden substitutes without admin notice.',
-    'Mobile players only. PC / Emulators are strictly prohibited and will be kicked from the custom room.',
-    'Custom Room ID and Password will appear exclusively on your Team Ticket page 15 minutes prior to match time.',
-    'Teaming up with enemy squads, third-party gfx tools, or hacking will result in an immediate ban with zero refund.',
-    'Prize money (1st: ₹1,000, 2nd: ₹500) will be transferred instantly via UPI after final score verification.',
-    'The winning captain must take a clear screenshot of the final Booyah scoreboard.'
-  ),
-  '+91 98765 43210'
-) ON CONFLICT (id) DO NOTHING;
+  '{"entryTime": "08:45 PM IST", "hidePointsTable": true, "whatsappGroupLink": "https://chat.whatsapp.com/invite"}'::jsonb,
+  '+918849596369'
+) ON CONFLICT (id) DO UPDATE SET
+  entry_fee = EXCLUDED.entry_fee,
+  first_prize = EXCLUDED.first_prize,
+  second_prize = EXCLUDED.second_prize,
+  per_kill_prize = EXCLUDED.per_kill_prize,
+  total_prize_pool = EXCLUDED.total_prize_pool,
+  updated_at = timezone('utc'::text, now());
 
-
--- ==============================================================================
--- 5. MIGRATIONS FOR PAYMENT & UPI EXPANSIONS
--- Run these safe idempotent statements to add payment tracking columns
--- ==============================================================================
-ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'unpaid';
-ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS entry_fee_paid INTEGER NOT NULL DEFAULT 100;
-ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS utr_number TEXT DEFAULT '';
-ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS payment_time TIMESTAMPTZ;
-ALTER TABLE public.tournaments ADD COLUMN IF NOT EXISTS upi_id TEXT DEFAULT '9054358668@ybl';
-ALTER TABLE public.tournaments ADD COLUMN IF NOT EXISTS upi_name TEXT DEFAULT 'Juned Rafik Patel';
+-- 8. RELOAD POSTGREST SCHEMA CACHE (Fixes "Could not find table in schema cache")
+NOTIFY pgrst, 'reload schema';
