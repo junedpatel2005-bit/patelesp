@@ -20,6 +20,10 @@ import {
   Download,
   Gamepad2,
   Users,
+  AlertTriangle,
+  HelpCircle,
+  QrCode,
+  Phone,
 } from "lucide-react";
 import { TeamRegistration, TournamentData } from "@/lib/types";
 import { getSocket } from "@/lib/socket-client";
@@ -45,6 +49,7 @@ export default function PaymentModal({
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [qrMode, setQrMode] = useState<"official" | "dynamic">("official");
   const [copied, setCopied] = useState(false);
+  const [copiedPhone, setCopiedPhone] = useState(false);
   const [utr, setUtr] = useState("");
   const [submittingUtr, setSubmittingUtr] = useState(false);
   const [utrSuccess, setUtrSuccess] = useState(false);
@@ -164,6 +169,15 @@ export default function PaymentModal({
       navigator.clipboard.writeText(upiId);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
+    }
+  };
+
+  // Copy Phone Number to clipboard
+  const handleCopyPhone = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(cleanPhone);
+      setCopiedPhone(true);
+      setTimeout(() => setCopiedPhone(false), 2500);
     }
   };
 
@@ -529,6 +543,103 @@ export default function PaymentModal({
                 <span className="text-emerald-400 font-black text-sm">BHIM UPI</span>
                 <span className="text-[10px] text-gray-400 font-normal">Direct App</span>
               </a>
+            </div>
+          </div>
+
+          {/* Paytm Protect & UPI Risk Policy Helper Box */}
+          <div className="bg-gradient-to-br from-amber-950/50 via-zinc-900 to-black border-2 border-amber-500/60 rounded-2xl p-4 shadow-xl space-y-3 relative overflow-hidden">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center shrink-0 mt-0.5">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-xs sm:text-sm font-black uppercase tracking-tight text-amber-300">
+                    Paytm / PhonePe &ldquo;UPI Risk Policy&rdquo; Alert?
+                  </h4>
+                  <span className="text-[10px] bg-amber-500 text-black font-black uppercase px-2 py-0.5 rounded-full">
+                    Easy Solution
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-300 mt-1 leading-relaxed">
+                  If Paytm or PhonePe shows <span className="text-amber-300 font-semibold">&ldquo;Payment may fail as per UPI Risk Policy&rdquo;</span>, it is normal security protection for website links. Choose either option below to pay smoothly:
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+              {/* Option 1: Scan QR */}
+              <div className="bg-black/60 border border-zinc-800 hover:border-zinc-700 rounded-xl p-3 flex flex-col justify-between transition">
+                <div>
+                  <div className="flex items-center gap-2 font-black text-white text-xs mb-1">
+                    <span className="w-5 h-5 rounded-full bg-red-600 text-[10px] text-white flex items-center justify-center shrink-0">
+                      1
+                    </span>
+                    <span>Tap &ldquo;Pay via Scanning QR&rdquo;</span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 leading-snug">
+                    Save this QR to your gallery, then select it inside Paytm / PhonePe to complete the ₹{squadPrice} payment.
+                  </p>
+                </div>
+                <a
+                  href={qrMode === "official" ? "/qr.png" : qrDataUrl}
+                  download={
+                    qrMode === "official"
+                      ? "PATELESP_Official_QR.png"
+                      : `PATELESP_Slot_${slotNum}_₹${squadPrice}_QR.png`
+                  }
+                  className="mt-2.5 inline-flex items-center justify-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] font-bold py-2 px-3 rounded-lg border border-zinc-700 transition"
+                >
+                  <Download className="w-3.5 h-3.5 text-red-500" />
+                  Save QR to Gallery
+                </a>
+              </div>
+
+              {/* Option 2: Pay via Mobile */}
+              <div className="bg-black/60 border border-zinc-800 hover:border-zinc-700 rounded-xl p-3 flex flex-col justify-between transition">
+                <div>
+                  <div className="flex items-center gap-2 font-black text-white text-xs mb-1">
+                    <span className="w-5 h-5 rounded-full bg-red-600 text-[10px] text-white flex items-center justify-center shrink-0">
+                      2
+                    </span>
+                    <span>Tap &ldquo;Pay via Mobile Number&rdquo;</span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 leading-snug">
+                    Tap &ldquo;Pay via Mobile Number&rdquo; in Paytm and enter: <strong className="text-white font-mono">{cleanPhone}</strong> ({paymentName})
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyPhone}
+                  className="mt-2.5 inline-flex items-center justify-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] font-bold py-2 px-3 rounded-lg border border-zinc-700 transition"
+                >
+                  {copiedPhone ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400">Mobile Number Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Copy Mobile Number ({cleanPhone})</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Manual UPI ID Fallback */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-zinc-950/90 border border-zinc-800/80 rounded-xl px-3 py-2 text-[11px]">
+              <span className="text-gray-300">
+                Or open any UPI app manually and pay to: <strong className="text-white font-mono">{upiId}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyUpi}
+                className="text-red-400 hover:text-red-300 font-bold underline transition self-start sm:self-auto shrink-0"
+              >
+                {copied ? "✓ Copied UPI ID" : "Copy UPI ID"}
+              </button>
             </div>
           </div>
 
